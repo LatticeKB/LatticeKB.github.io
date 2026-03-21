@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+@import './theme.css';
+
+:root {
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  background: var(--color-shadow-grey);
+  color: var(--color-soft-linen);
+}
+
+html {
+  background: var(--color-shadow-grey);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(8, 127, 140, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 22%),
+    var(--color-shadow-grey);
+  color: var(--color-soft-linen);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+*::selection {
+  background: rgba(8, 127, 140, 0.34);
+  color: var(--color-soft-linen);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.bn-container[data-color-scheme='dark'] {
+  --bn-colors-editor-background: var(--color-panel);
+  --bn-colors-editor-text: var(--color-soft-linen);
+  --bn-colors-menu-background: var(--color-panel-2);
+  --bn-colors-menu-text: var(--color-soft-linen);
+  --bn-colors-tooltip-background: var(--color-panel-2);
+  --bn-colors-tooltip-text: var(--color-soft-linen);
+  --bn-colors-hovered-background: rgba(236, 235, 228, 0.06);
+  --bn-colors-selected-background: rgba(8, 127, 140, 0.16);
+  --bn-colors-selected-text: var(--color-soft-linen);
+  --bn-colors-side-menu: var(--color-muted);
+  --bn-colors-border: rgba(236, 235, 228, 0.08);
+  --bn-font-family: var(--font-sans);
+}
+
+.lattice-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(236, 235, 228, 0.16) transparent;
+}
+
+.lattice-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.lattice-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(236, 235, 228, 0.16);
+  border-radius: 999px;
+}

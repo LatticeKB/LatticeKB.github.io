@@ -1,0 +1,27 @@
+export const canonicalTags = [
+  'access',
+  'account',
+  'authentication',
+  'conference-room',
+  'desktop',
+  'email',
+  'endpoint',
+  'incident',
+  'macos',
+  'mailbox',
+  'mobile',
+  'network',
+  'onboarding',
+  'outlook',
+  'password',
+  'policy',
+  'printer',
+  'screensharing',
+  'search',
+  'security',
+  'ticketing',
+  'vpn',
+  'windows',
+] as const;
+
+export type CanonicalTag = (typeof canonicalTags)[number];

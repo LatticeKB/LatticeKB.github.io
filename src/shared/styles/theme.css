@@ -1,0 +1,16 @@
+@theme {
+  --color-shadow-grey: #221d23;
+  --color-teal: #087f8c;
+  --color-soft-linen: #ecebe4;
+  --color-panel: #171418;
+  --color-panel-2: #1d191f;
+  --color-line: rgba(236, 235, 228, 0.08);
+  --color-line-strong: rgba(236, 235, 228, 0.16);
+  --color-muted: #a8a19f;
+  --color-danger: #d1606a;
+
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.22);
+}
