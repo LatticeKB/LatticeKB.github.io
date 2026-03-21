@@ -1,4 +1,4 @@
-import { FilePenLine, Image as ImageIcon, Pin } from 'lucide-react';
+import { ExternalLink, FilePenLine, Image as ImageIcon, Pin } from 'lucide-react';
 import type { CorpusEntry } from '../../../features/corpus/model/types';
 import { formatAbsoluteDate } from '../../../shared/lib/dates';
 import { Button } from '../../../shared/ui/Button';
@@ -8,10 +8,11 @@ import { extractImageMetadata } from '../../../features/images/lib/imageBlockHel
 
 type Props = {
   entry: CorpusEntry | null;
+  onOpenArticle: (entry: CorpusEntry) => void;
   onEdit: (entry: CorpusEntry) => void;
 };
 
-export function PreviewPane({ entry, onEdit }: Props) {
+export function PreviewPane({ entry, onOpenArticle, onEdit }: Props) {
   if (!entry) {
     return <EmptyState>Select a result to inspect the article preview.</EmptyState>;
   }
@@ -32,7 +33,14 @@ export function PreviewPane({ entry, onEdit }: Props) {
           <h2 className="mt-3 text-xl font-semibold text-soft-linen">{entry.title}</h2>
           <p className="mt-3 text-sm leading-6 text-muted">{entry.summary || plainText.slice(0, 240) || 'No summary yet.'}</p>
         </div>
-        <Button variant="solid" onClick={() => onEdit(entry)}>
+      </div>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <Button variant="solid" onClick={() => onOpenArticle(entry)}>
+          <ExternalLink size={16} />
+          Open article
+        </Button>
+        <Button onClick={() => onEdit(entry)}>
           <FilePenLine size={16} />
           Edit
         </Button>

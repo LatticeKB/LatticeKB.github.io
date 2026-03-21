@@ -4,13 +4,13 @@ function isRecord(value: unknown): value is MaybeRecord {
   return typeof value === 'object' && value !== null;
 }
 
-function flattenText(input: unknown): string {
+export function contentToPlainText(input: unknown): string {
   if (typeof input === 'string') {
     return input;
   }
 
   if (Array.isArray(input)) {
-    return input.map(flattenText).join(' ');
+    return input.map(contentToPlainText).join(' ');
   }
 
   if (isRecord(input)) {
@@ -21,7 +21,7 @@ function flattenText(input: unknown): string {
     }
 
     if ('content' in input) {
-      parts.push(flattenText(input.content));
+      parts.push(contentToPlainText(input.content));
     }
 
     if (isRecord(input.props)) {
@@ -39,7 +39,7 @@ function flattenText(input: unknown): string {
     }
 
     if (Array.isArray(input.children)) {
-      parts.push(input.children.map(flattenText).join(' '));
+      parts.push(input.children.map(contentToPlainText).join(' '));
     }
 
     return parts.join(' ');
@@ -49,5 +49,5 @@ function flattenText(input: unknown): string {
 }
 
 export function blocksToPlainText(blocks: unknown[]) {
-  return flattenText(blocks).replace(/\s+/g, ' ').trim();
+  return contentToPlainText(blocks).replace(/\s+/g, ' ').trim();
 }

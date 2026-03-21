@@ -20,6 +20,10 @@ export type EditorSession =
   | { open: false; mode: 'closed'; entry: null }
   | { open: true; mode: 'create' | 'edit'; entry: CorpusEntry };
 
+export type ViewerSession =
+  | { open: false; entry: null }
+  | { open: true; entry: CorpusEntry };
+
 function createEmptyEntry(): CorpusEntry {
   const now = new Date().toISOString();
   return {
@@ -48,6 +52,7 @@ export function useWorkspaceController() {
   const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(sampleCorpus.entries[0]?.id ?? null);
   const [editorSession, setEditorSession] = useState<EditorSession>({ open: false, mode: 'closed', entry: null });
+  const [viewerSession, setViewerSession] = useState<ViewerSession>({ open: false, entry: null });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [rankingOpen, setRankingOpen] = useState(false);
 
@@ -67,11 +72,22 @@ export function useWorkspaceController() {
   }
 
   function openNewArticle() {
+    setViewerSession({ open: false, entry: null });
     setEditorSession({ open: true, mode: 'create', entry: createEmptyEntry() });
   }
 
+  function openArticle(entry: CorpusEntry) {
+    setSelectedEntryId(entry.id);
+    setViewerSession({ open: true, entry });
+  }
+
   function openEditArticle(entry: CorpusEntry) {
+    setViewerSession({ open: false, entry: null });
     setEditorSession({ open: true, mode: 'edit', entry });
+  }
+
+  function closeViewer() {
+    setViewerSession({ open: false, entry: null });
   }
 
   function closeEditor() {
@@ -87,6 +103,7 @@ export function useWorkspaceController() {
       return { ...current, entries };
     });
     setSelectedEntryId(nextEntry.id);
+    setViewerSession({ open: true, entry: nextEntry });
     closeEditor();
   }
 
@@ -97,6 +114,8 @@ export function useWorkspaceController() {
       setCorpusName(imported.filename);
       setLastCorpusName(imported.filename);
       setSelectedEntryId(imported.corpus.entries[0]?.id ?? null);
+      setViewerSession({ open: false, entry: null });
+      setEditorSession({ open: false, mode: 'closed', entry: null });
       setErrorMessage(null);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Unable to import corpus.');
@@ -119,6 +138,9 @@ export function useWorkspaceController() {
     selectedEntry,
     selectedEntryId,
     setSelectedEntryId,
+    viewerSession,
+    openArticle,
+    closeViewer,
     editorSession,
     openNewArticle,
     openEditArticle,

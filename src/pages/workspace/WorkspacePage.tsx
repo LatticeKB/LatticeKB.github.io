@@ -1,11 +1,13 @@
-import { lazy, Suspense, useRef, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { AppWindow, Upload } from 'lucide-react';
 import { TopBar } from '../../app/layout/TopBar';
 import { WorkspaceLayout } from '../../app/layout/WorkspaceLayout';
+import { openArticleInNewTab } from '../../features/corpus/lib/openArticleInNewTab';
 import { ErrorState } from '../../shared/ui/ErrorState';
 import { EmptyState } from '../../shared/ui/EmptyState';
 import { Button } from '../../shared/ui/Button';
 import { FiltersBar } from './components/FiltersBar';
+import { ArticleViewerModal } from './components/ArticleViewerModal';
 import { PreviewPane } from './components/PreviewPane';
 import { ResultList } from './components/ResultList';
 import { SearchSection } from './components/SearchSection';
@@ -18,6 +20,11 @@ export function WorkspacePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging] = useState(false);
 
+  const resultMap = useMemo(
+    () => new Map(controller.results.map((hit) => [hit.entry.id, hit.entry])),
+    [controller.results],
+  );
+
   async function handleFileSelection(fileList: FileList | null) {
     const file = fileList?.[0];
     if (!file) {
@@ -25,6 +32,15 @@ export function WorkspacePage() {
     }
 
     await controller.loadCorpusFromFile(file);
+  }
+
+  function openResultArticle(id: string) {
+    const entry = resultMap.get(id) ?? controller.corpus.entries.find((item) => item.id === id) ?? null;
+    if (!entry) {
+      return;
+    }
+
+    controller.openArticle(entry);
   }
 
   return (
@@ -67,7 +83,15 @@ export function WorkspacePage() {
           filters={controller.filters}
         />
 
-        <WorkspaceLayout sidebar={<PreviewPane entry={controller.selectedEntry} onEdit={controller.openEditArticle} />}>
+        <WorkspaceLayout
+          sidebar={
+            <PreviewPane
+              entry={controller.selectedEntry}
+              onOpenArticle={controller.openArticle}
+              onEdit={controller.openEditArticle}
+            />
+          }
+        >
           <section className="space-y-5">
             {controller.errorMessage ? (
               <ErrorState title="Import failed" detail={controller.errorMessage} />
@@ -117,12 +141,19 @@ export function WorkspacePage() {
               <ResultList
                 results={controller.results}
                 selectedEntryId={controller.selectedEntryId}
-                onSelect={controller.setSelectedEntryId}
+                onOpenArticle={openResultArticle}
               />
             )}
           </section>
         </WorkspaceLayout>
       </div>
+      <ArticleViewerModal
+        open={controller.viewerSession.open}
+        entry={controller.viewerSession.entry}
+        onClose={controller.closeViewer}
+        onEdit={controller.openEditArticle}
+        onOpenInNewTab={openArticleInNewTab}
+      />
 
       <Suspense fallback={null}>
         <EditorModal

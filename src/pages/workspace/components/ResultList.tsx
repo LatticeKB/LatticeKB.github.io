@@ -5,10 +5,10 @@ import { ResultRow } from './ResultRow';
 type Props = {
   results: SearchHit[];
   selectedEntryId: string | null;
-  onSelect: (id: string) => void;
+  onOpenArticle: (id: string) => void;
 };
 
-export function ResultList({ results, selectedEntryId, onSelect }: Props) {
+export function ResultList({ results, selectedEntryId, onOpenArticle }: Props) {
   if (results.length === 0) {
     return <EmptyState>No results match the current query and filters.</EmptyState>;
   }
@@ -20,7 +20,7 @@ export function ResultList({ results, selectedEntryId, onSelect }: Props) {
           key={hit.entry.id}
           hit={hit}
           active={hit.entry.id === selectedEntryId}
-          onSelect={() => onSelect(hit.entry.id)}
+          onSelect={() => onOpenArticle(hit.entry.id)}
         />
       ))}
     </div>

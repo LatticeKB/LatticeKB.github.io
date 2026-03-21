@@ -44,34 +44,19 @@ The compiled static site is written to `dist/`.
 
 This repository includes `.github/workflows/deploy.yml` for GitHub Pages.
 
-### Recommended repository deployment
+### Base-path behavior
 
-For a repository site such as:
+The workflow now detects the deployment shape automatically:
 
-- `https://<user>.github.io/<repo>/`
+- if the repository is the root Pages repo (`<owner>.github.io`), it builds with `VITE_BASE_PATH=/`
+- otherwise it builds with `VITE_BASE_PATH=/<repo>/`
 
-leave the workflow as-is. It sets:
-
-```bash
-VITE_BASE_PATH=/<repo>/
-```
-
-via `${{ github.event.repository.name }}` so built assets resolve correctly on Pages.
-
-### Root domain or custom domain deployment
-
-If you deploy to either of these:
+That covers both of these cases without editing the workflow each time:
 
 - `https://<user>.github.io/`
-- a custom domain
+- `https://<user>.github.io/<repo>/`
 
-change the workflow environment variable to:
-
-```bash
-VITE_BASE_PATH=/
-```
-
-That matches Vite's static deployment guidance for root-hosted sites.
+If you deploy to a custom domain, keep `VITE_BASE_PATH=/`.
 
 ### Enable Pages
 
