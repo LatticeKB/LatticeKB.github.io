@@ -3,8 +3,7 @@ import { AppWindow, Upload } from 'lucide-react';
 import { TopBar } from '../../app/layout/TopBar';
 import { WorkspaceLayout } from '../../app/layout/WorkspaceLayout';
 import { openArticleInNewTab } from '../../features/corpus/lib/openArticleInNewTab';
-import { ErrorState } from '../../shared/ui/ErrorState';
-import { EmptyState } from '../../shared/ui/EmptyState';
+import { StatePanel } from '../../shared/ui/StatePanel';
 import { Button } from '../../shared/ui/Button';
 import { FiltersBar } from './components/FiltersBar';
 import { ArticleViewerModal } from './components/ArticleViewerModal';
@@ -105,7 +104,7 @@ export function WorkspacePage() {
         >
           <section className="space-y-5">
             {controller.errorMessage ? (
-              <ErrorState title="Import failed" detail={controller.errorMessage} />
+              <StatePanel variant="error" title="Import failed" detail={controller.errorMessage} />
             ) : null}
 
             <div className="rounded-[28px] border border-white/8 bg-black/12 p-4">
@@ -121,7 +120,7 @@ export function WorkspacePage() {
             </div>
 
             {dragging ? (
-              <EmptyState>
+              <StatePanel centered>
                 <div className="flex flex-col items-center gap-3">
                   <Upload className="text-teal" size={20} />
                   <div>
@@ -129,11 +128,11 @@ export function WorkspacePage() {
                     <p className="mt-1 text-muted">Schema is validated locally before the in-browser index is rebuilt.</p>
                   </div>
                 </div>
-              </EmptyState>
+              </StatePanel>
             ) : null}
 
             {!dragging && controller.corpus.entries.length === 0 ? (
-              <EmptyState>
+              <StatePanel centered>
                 <div className="flex flex-col items-center gap-3">
                   <AppWindow size={20} className="text-teal" />
                   <div>
@@ -147,7 +146,7 @@ export function WorkspacePage() {
                     </Button>
                   </div>
                 </div>
-              </EmptyState>
+              </StatePanel>
             ) : (
               <ResultList
                 results={controller.results}

@@ -1,7 +1,6 @@
 import { Input } from '../../../shared/ui/Input';
 import { Button } from '../../../shared/ui/Button';
-import { TagEditor } from './TagEditor';
-import { SuggestedTags } from './SuggestedTags';
+import { TagPanels } from './TagPanels';
 
 type Props = {
   summary: string;
@@ -80,8 +79,13 @@ export function PropertiesRail(props: Props) {
         </div>
       </section>
 
-      <TagEditor tags={props.tags} onAddTag={props.onAddTag} onRemoveTag={props.onRemoveTag} />
-      <SuggestedTags suggestions={props.suggestedTags} onAccept={props.onAcceptSuggestion} />
+      <TagPanels
+        tags={props.tags}
+        suggestions={props.suggestedTags}
+        onAddTag={props.onAddTag}
+        onRemoveTag={props.onRemoveTag}
+        onAcceptSuggestion={props.onAcceptSuggestion}
+      />
     </aside>
   );
 }

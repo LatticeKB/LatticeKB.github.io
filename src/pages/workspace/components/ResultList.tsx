@@ -1,5 +1,5 @@
 import type { SearchHit } from '../../../features/search/model/searchTypes';
-import { EmptyState } from '../../../shared/ui/EmptyState';
+import { StatePanel } from '../../../shared/ui/StatePanel';
 import { ResultRow } from './ResultRow';
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
 
 export function ResultList({ results, selectedEntryId, onOpenArticle, onHoverArticle, onTogglePinned }: Props) {
   if (results.length === 0) {
-    return <EmptyState>No results match the current query and filters.</EmptyState>;
+    return <StatePanel centered>No results match the current query and filters.</StatePanel>;
   }
 
   return (

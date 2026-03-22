@@ -2,7 +2,7 @@ import { ExternalLink, FilePenLine, Image as ImageIcon, Pin } from 'lucide-react
 import type { CorpusEntry } from '../../../features/corpus/model/types';
 import { formatAbsoluteDate } from '../../../shared/lib/dates';
 import { Button } from '../../../shared/ui/Button';
-import { EmptyState } from '../../../shared/ui/EmptyState';
+import { StatePanel } from '../../../shared/ui/StatePanel';
 import { blocksToPlainText } from '../../../features/editor/lib/blockTransforms';
 import { extractImageMetadata } from '../../../features/images/lib/imageBlockHelpers';
 
@@ -16,7 +16,7 @@ type Props = {
 
 export function PreviewPane({ entry, onOpenArticle, onEdit, onTogglePinned, onSearchTag }: Props) {
   if (!entry) {
-    return <EmptyState>Hover a result to inspect the article preview.</EmptyState>;
+    return <StatePanel centered>Hover a result to inspect the article preview.</StatePanel>;
   }
 
   const plainText = blocksToPlainText(entry.body.blocks);
