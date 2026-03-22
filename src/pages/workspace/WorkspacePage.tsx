@@ -161,7 +161,8 @@ export function WorkspacePage() {
 
         <footer className="mx-auto mt-8 w-full max-w-[1480px] px-5 pb-8 text-xs text-muted sm:px-6 lg:px-8">
           <p>
-            ©2026 
+            ©{' '}
+            2026{' '}
             <a
               href="https://equiweb.github.io"
               target="_blank"
