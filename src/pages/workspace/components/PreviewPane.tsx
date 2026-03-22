@@ -23,9 +23,9 @@ export function PreviewPane({ entry, onOpenArticle, onEdit, onTogglePinned, onSe
   const images = extractImageMetadata(entry.body.blocks);
 
   return (
-    <section className="sticky top-4 rounded-[28px] border border-white/8 bg-black/14 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+    <section className="rounded-[28px] border border-white/8 bg-black/14 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] lg:sticky lg:top-4 lg:flex lg:max-h-[min(72vh,calc(100vh-8rem))] lg:flex-col lg:overflow-hidden">
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted">
             <span>{entry.product}</span>
             <span>/</span>
@@ -36,7 +36,7 @@ export function PreviewPane({ entry, onOpenArticle, onEdit, onTogglePinned, onSe
         </div>
         <Button
           variant={entry.pinned ? 'solid' : 'ghost'}
-          className="rounded-full p-2"
+          className="shrink-0 rounded-full p-2"
           aria-label={entry.pinned ? 'Unpin article' : 'Pin article'}
           onClick={() => onTogglePinned(entry.id)}
         >
@@ -61,7 +61,7 @@ export function PreviewPane({ entry, onOpenArticle, onEdit, onTogglePinned, onSe
       </div>
 
       <div className="mt-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <h3 className="text-xs uppercase tracking-[0.16em] text-muted">Tags</h3>
           {images.length > 0 ? (
             <span className="inline-flex items-center gap-1 text-xs text-muted">
@@ -85,9 +85,11 @@ export function PreviewPane({ entry, onOpenArticle, onEdit, onTogglePinned, onSe
         </div>
       </div>
 
-      <div className="mt-6 border-t border-white/8 pt-5">
+      <div className="mt-6 border-t border-white/8 pt-5 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
         <h3 className="text-xs uppercase tracking-[0.16em] text-muted">Extract</h3>
-        <p className="mt-3 text-sm leading-6 text-muted">{plainText || 'No document body yet.'}</p>
+        <div className="mt-3 lg:lattice-scrollbar lg:max-h-full lg:overflow-y-auto lg:pr-1">
+          <p className="text-sm leading-6 text-muted">{plainText || 'No document body yet.'}</p>
+        </div>
       </div>
     </section>
   );
