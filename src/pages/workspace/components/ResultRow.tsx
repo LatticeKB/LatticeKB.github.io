@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Pin, Star } from 'lucide-react';
+import { Image as ImageIcon, Pin } from 'lucide-react';
 import type { SearchHit } from '../../../features/search/model/searchTypes';
 import { formatRelativeDate } from '../../../shared/lib/dates';
 import { cn } from '../../../shared/lib/classes';
@@ -60,10 +60,6 @@ export function ResultRow({ hit, active, onOpen, onHover, onTogglePinned }: Prop
             {imageCount}
           </span>
         ) : null}
-        <span className="inline-flex items-center gap-1 rounded-full border border-white/8 px-2 py-1">
-          <Star size={12} />
-          {hit.entry.confidence}
-        </span>
       </div>
     </article>
   );

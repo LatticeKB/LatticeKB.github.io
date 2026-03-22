@@ -34,7 +34,6 @@ function createEmptyEntry(): CorpusEntry {
     category: 'Reference',
     tags: [],
     aliases: [],
-    confidence: 'medium',
     pinned: false,
     createdAt: now,
     updatedAt: now,

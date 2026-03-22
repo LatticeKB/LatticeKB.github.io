@@ -2,14 +2,12 @@ import { Input } from '../../../shared/ui/Input';
 import { Button } from '../../../shared/ui/Button';
 import { TagEditor } from './TagEditor';
 import { SuggestedTags } from './SuggestedTags';
-import type { ConfidenceLevel } from '../../../features/corpus/model/types';
 
 type Props = {
   summary: string;
   product: string;
   category: string;
   aliases: string;
-  confidence: ConfidenceLevel;
   pinned: boolean;
   tags: string[];
   suggestedTags: string[];
@@ -19,7 +17,6 @@ type Props = {
   onProductChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onAliasesChange: (value: string) => void;
-  onConfidenceChange: (value: ConfidenceLevel) => void;
   onPinnedChange: (value: boolean) => void;
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
@@ -76,24 +73,10 @@ export function PropertiesRail(props: Props) {
             <span className="mb-2 block text-xs uppercase tracking-[0.16em] text-muted">Aliases</span>
             <Input value={props.aliases} onChange={(event) => props.onAliasesChange(event.target.value)} placeholder="Comma-separated alternate names" />
           </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-2 block text-xs uppercase tracking-[0.16em] text-muted">Confidence</span>
-              <select
-                value={props.confidence}
-                onChange={(event) => props.onConfidenceChange(event.target.value as ConfidenceLevel)}
-                className="w-full rounded-2xl border border-white/8 bg-white/3 px-3.5 py-2.5 text-sm text-soft-linen outline-none focus:border-teal/65"
-              >
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-              </select>
-            </label>
-            <label className="flex items-center rounded-2xl border border-white/8 bg-white/3 px-3.5 py-2.5 sm:items-end">
-              <input type="checkbox" checked={props.pinned} onChange={(event) => props.onPinnedChange(event.target.checked)} className="mr-3 accent-teal" />
-              <span className="text-sm text-soft-linen">Pinned article</span>
-            </label>
-          </div>
+          <label className="flex items-center rounded-2xl border border-white/8 bg-white/3 px-3.5 py-2.5 sm:items-end">
+            <input type="checkbox" checked={props.pinned} onChange={(event) => props.onPinnedChange(event.target.checked)} className="mr-3 accent-teal" />
+            <span className="text-sm text-soft-linen">Pinned article</span>
+          </label>
         </div>
       </section>
 

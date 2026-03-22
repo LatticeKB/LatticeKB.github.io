@@ -136,7 +136,6 @@ Each entry includes:
 - `category`
 - `tags`
 - `aliases`
-- `confidence`
 - `pinned`
 - `createdAt`
 - `updatedAt`

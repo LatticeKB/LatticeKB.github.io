@@ -131,7 +131,6 @@ export function EditorModal({ session, onClose, onSave, productOptions, category
           product={currentDraft.product}
           category={currentDraft.category}
           aliases={aliasesText}
-          confidence={currentDraft.confidence}
           pinned={currentDraft.pinned}
           tags={currentDraft.tags}
           suggestedTags={suggestedTags}
@@ -144,7 +143,6 @@ export function EditorModal({ session, onClose, onSave, productOptions, category
             setAliasesText(value);
             patch({ aliases: value.split(',').map((alias) => alias.trim()).filter(Boolean) });
           }}
-          onConfidenceChange={(confidence) => patch({ confidence })}
           onPinnedChange={(pinned) => patch({ pinned })}
           onAddTag={addTag}
           onRemoveTag={removeTag}

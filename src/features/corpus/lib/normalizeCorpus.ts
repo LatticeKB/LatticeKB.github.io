@@ -19,7 +19,6 @@ function normalizeEntry(entry: CorpusEntry): CorpusEntry {
     category: entry.category.trim() || 'Reference',
     tags: normalizeTags(entry.tags),
     aliases: entry.aliases.map((alias) => alias.trim()).filter(Boolean),
-    confidence: entry.confidence,
     pinned: entry.pinned,
     createdAt: entry.createdAt || now,
     updatedAt: entry.updatedAt || entry.createdAt || now,

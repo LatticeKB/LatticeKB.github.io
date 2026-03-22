@@ -1,7 +1,5 @@
 export type CorpusVersion = '1.1';
 
-export type ConfidenceLevel = 'low' | 'medium' | 'high';
-
 export type StoredBlock = Record<string, unknown>;
 
 export type EntryBody = {
@@ -17,7 +15,6 @@ export type CorpusEntry = {
   category: string;
   tags: string[];
   aliases: string[];
-  confidence: ConfidenceLevel;
   pinned: boolean;
   createdAt: string;
   updatedAt: string;
