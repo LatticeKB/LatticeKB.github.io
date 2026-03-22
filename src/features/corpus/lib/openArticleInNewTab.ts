@@ -38,6 +38,12 @@ function renderBlocks(entry: CorpusEntry) {
         return `<p class="list-item"># ${text}</p>`;
       }
 
+      if (type === 'file' && typeof props.url === 'string' && props.url) {
+        const name = typeof props.name === 'string' && props.name ? props.name : 'Attached file';
+        const caption = typeof props.caption === 'string' ? props.caption : '';
+        return `<p><a href="${props.url}" download="${escapeHtml(name)}">${escapeHtml(name)}</a>${caption ? ` — ${escapeHtml(caption)}` : ''}</p>`;
+      }
+
       return text ? `<p>${text}</p>` : '';
     })
     .join('');

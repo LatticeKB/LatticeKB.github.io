@@ -36,6 +36,10 @@ export function contentToPlainText(input: unknown): string {
       if (typeof input.props.title === 'string') {
         parts.push(input.props.title);
       }
+
+      if (typeof input.props.name === 'string') {
+        parts.push(input.props.name);
+      }
     }
 
     if (Array.isArray(input.children)) {

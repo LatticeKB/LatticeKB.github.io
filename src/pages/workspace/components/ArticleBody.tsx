@@ -132,7 +132,13 @@ function renderBlock(block: RenderNode, entry: CorpusEntry) {
 
       return (
         <div key={key} className="rounded-2xl border border-white/8 bg-black/18 p-4">
-          <a href={url} target="_blank" rel="noreferrer noopener" className="text-teal underline underline-offset-4">
+          <a
+            href={url}
+            download={name}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-teal underline underline-offset-4"
+          >
             {name}
           </a>
         </div>

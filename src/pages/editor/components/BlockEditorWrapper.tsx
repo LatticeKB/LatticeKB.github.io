@@ -2,7 +2,7 @@ import { BlockNoteView } from '@blocknote/mantine';
 import { useCreateBlockNote } from '@blocknote/react';
 import type { BlockNoteEditor } from '@blocknote/core';
 import { useState } from 'react';
-import { imageFileToDataUrl } from '../../../features/images/lib/imageCompression';
+import { embedFileAsDataUrl } from '../../../features/images/lib/embedFileAsDataUrl';
 import { getClipboardImage } from '../../../features/images/lib/clipboardImage';
 
 type Props = {
@@ -27,7 +27,7 @@ export function BlockEditorWrapper({ initialBlocks, onBlocksChange }: Props) {
     {
       initialContent,
       defaultStyles: false,
-      uploadFile: async (file) => imageFileToDataUrl(file),
+      uploadFile: async (file) => embedFileAsDataUrl(file),
       pasteHandler: ({ event, defaultPasteHandler }) => {
         const image = getClipboardImage(event);
         if (!image) {
