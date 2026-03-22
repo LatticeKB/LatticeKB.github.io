@@ -23,7 +23,7 @@ export function PreviewPane({ entry, onOpenArticle, onEdit, onTogglePinned, onSe
   const images = extractImageMetadata(entry.body.blocks);
 
   return (
-    <section className="rounded-[28px] border border-white/8 bg-black/14 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] lg:sticky lg:top-4 lg:flex lg:max-h-[min(72vh,calc(100vh-8rem))] lg:flex-col lg:overflow-hidden">
+    <section className="rounded-[28px] border border-white/8 bg-black/14 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted">
@@ -85,11 +85,11 @@ export function PreviewPane({ entry, onOpenArticle, onEdit, onTogglePinned, onSe
         </div>
       </div>
 
-      <div className="mt-6 border-t border-white/8 pt-5 lg:min-h-0 lg:flex-1 lg:overflow-hidden">
+      <div className="mt-6 border-t border-white/8 pt-5">
         <h3 className="text-xs uppercase tracking-[0.16em] text-muted">Extract</h3>
-        <div className="mt-3 lg:lattice-scrollbar lg:max-h-full lg:overflow-y-auto lg:pr-1">
-          <p className="text-sm leading-6 text-muted">{plainText || 'No document body yet.'}</p>
-        </div>
+        <p className="mt-3 overflow-hidden text-sm leading-6 text-muted [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:8]">
+          {plainText || 'No document body yet.'}
+        </p>
       </div>
     </section>
   );
