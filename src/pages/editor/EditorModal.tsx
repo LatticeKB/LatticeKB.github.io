@@ -8,16 +8,17 @@ import { deserializeBodyToBlocks } from '../../features/editor/lib/blockDeserial
 import { serializeBlocksToBody } from '../../features/editor/lib/blockSerialization';
 import { normalizeTags } from '../../features/tags/lib/normalizeTags';
 import { suggestTags } from '../../features/tags/lib/suggestTags';
-import { extractImageMetadata } from '../../features/images/lib/imageBlockHelpers';
 import { clearDraft, readDraft, saveDraft } from '../../features/persistence/lib/draftStore';
 
 type Props = {
   session: EditorSession;
   onClose: () => void;
   onSave: (entry: CorpusEntry) => void;
+  productOptions: string[];
+  categoryOptions: string[];
 };
 
-export function EditorModal({ session, onClose, onSave }: Props) {
+export function EditorModal({ session, onClose, onSave, productOptions, categoryOptions }: Props) {
   const [draft, setDraft] = useState<CorpusEntry | null>(() => session.entry);
   const [aliasesText, setAliasesText] = useState(() => session.entry?.aliases.join(', ') ?? '');
 
@@ -68,7 +69,6 @@ export function EditorModal({ session, onClose, onSave }: Props) {
 
   const currentDraft = draft;
   const blocks = deserializeBodyToBlocks(currentDraft.body);
-  const imageCount = extractImageMetadata(blocks).length;
 
   function patch(next: Partial<CorpusEntry>) {
     setDraft((current) => {
@@ -135,7 +135,8 @@ export function EditorModal({ session, onClose, onSave }: Props) {
           pinned={currentDraft.pinned}
           tags={currentDraft.tags}
           suggestedTags={suggestedTags}
-          imageCount={imageCount}
+          productOptions={productOptions}
+          categoryOptions={categoryOptions}
           onSummaryChange={(summary) => patch({ summary })}
           onProductChange={(product) => patch({ product })}
           onCategoryChange={(category) => patch({ category })}

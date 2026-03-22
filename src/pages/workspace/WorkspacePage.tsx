@@ -19,11 +19,22 @@ export function WorkspacePage() {
   const controller = useWorkspaceController();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [hoveredEntryId, setHoveredEntryId] = useState<string | null>(null);
 
   const resultMap = useMemo(
     () => new Map(controller.results.map((hit) => [hit.entry.id, hit.entry])),
     [controller.results],
   );
+  const metadataOptions = useMemo(
+    () => ({
+      products: Array.from(new Set(controller.corpus.entries.map((entry) => entry.product).filter(Boolean))).sort(),
+      categories: Array.from(new Set(controller.corpus.entries.map((entry) => entry.category).filter(Boolean))).sort(),
+    }),
+    [controller.corpus.entries],
+  );
+  const previewEntry = hoveredEntryId
+    ? resultMap.get(hoveredEntryId) ?? controller.corpus.entries.find((item) => item.id === hoveredEntryId) ?? controller.selectedEntry
+    : controller.selectedEntry;
 
   async function handleFileSelection(fileList: FileList | null) {
     const file = fileList?.[0];
@@ -78,17 +89,16 @@ export function WorkspacePage() {
           query={controller.query}
           onQueryChange={controller.setQuery}
           onQuickQuery={controller.setQuery}
-          rankingOpen={controller.rankingOpen}
-          onToggleRanking={() => controller.setRankingOpen(!controller.rankingOpen)}
-          filters={controller.filters}
         />
 
         <WorkspaceLayout
           sidebar={
             <PreviewPane
-              entry={controller.selectedEntry}
+              entry={previewEntry}
               onOpenArticle={controller.openArticle}
               onEdit={controller.openEditArticle}
+              onTogglePinned={controller.togglePinned}
+              onSearchTag={controller.setQuery}
             />
           }
         >
@@ -140,8 +150,10 @@ export function WorkspacePage() {
             ) : (
               <ResultList
                 results={controller.results}
-                selectedEntryId={controller.selectedEntryId}
+                selectedEntryId={hoveredEntryId ?? controller.selectedEntryId}
                 onOpenArticle={openResultArticle}
+                onHoverArticle={setHoveredEntryId}
+                onTogglePinned={controller.togglePinned}
               />
             )}
           </section>
@@ -161,6 +173,8 @@ export function WorkspacePage() {
           session={controller.editorSession}
           onClose={controller.closeEditor}
           onSave={controller.saveEntry}
+          productOptions={metadataOptions.products}
+          categoryOptions={metadataOptions.categories}
         />
       </Suspense>
     </div>

@@ -3,29 +3,35 @@ import type { SearchHit } from '../../../features/search/model/searchTypes';
 import { formatRelativeDate } from '../../../shared/lib/dates';
 import { cn } from '../../../shared/lib/classes';
 import { extractImageMetadata } from '../../../features/images/lib/imageBlockHelpers';
+import { Button } from '../../../shared/ui/Button';
 
 type Props = {
   hit: SearchHit;
   active: boolean;
-  onSelect: () => void;
+  onOpen: () => void;
+  onHover: () => void;
+  onTogglePinned: () => void;
 };
 
-export function ResultRow({ hit, active, onSelect }: Props) {
+export function ResultRow({ hit, active, onOpen, onHover, onTogglePinned }: Props) {
   const imageCount = extractImageMetadata(hit.entry.body.blocks).length;
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <article
       className={cn(
-        'w-full rounded-3xl border px-4 py-4 text-left transition duration-150 ease-quiet focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal',
+        'rounded-3xl border px-4 py-4 transition duration-150 ease-quiet',
         active
           ? 'border-teal/40 bg-teal/10'
           : 'border-white/6 bg-white/[0.025] hover:border-white/12 hover:bg-white/[0.04]',
       )}
+      onMouseEnter={onHover}
     >
       <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="min-w-0 flex-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+        >
           <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted">
             <span>{hit.entry.product}</span>
             <span className="text-white/18">/</span>
@@ -33,9 +39,16 @@ export function ResultRow({ hit, active, onSelect }: Props) {
           </div>
           <h3 className="mt-2 text-[15px] font-medium text-soft-linen">{hit.entry.title}</h3>
           <p className="mt-2 text-sm leading-6 text-muted">{hit.matchText}</p>
-        </div>
+        </button>
         <div className="flex flex-col items-end gap-3 text-xs text-muted">
-          {hit.entry.pinned ? <Pin size={14} className="text-teal" /> : null}
+          <Button
+            variant={hit.entry.pinned ? 'solid' : 'ghost'}
+            className="rounded-full p-2"
+            aria-label={hit.entry.pinned ? 'Unpin article' : 'Pin article'}
+            onClick={onTogglePinned}
+          >
+            <Pin size={14} className={hit.entry.pinned ? 'text-teal' : ''} />
+          </Button>
           <span>{hit.score.toFixed(2)}</span>
         </div>
       </div>
@@ -52,6 +65,6 @@ export function ResultRow({ hit, active, onSelect }: Props) {
           {hit.entry.confidence}
         </span>
       </div>
-    </button>
+    </article>
   );
 }

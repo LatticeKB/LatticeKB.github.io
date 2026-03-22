@@ -2,7 +2,6 @@ import { Input } from '../../../shared/ui/Input';
 import { Button } from '../../../shared/ui/Button';
 import { TagEditor } from './TagEditor';
 import { SuggestedTags } from './SuggestedTags';
-import { ImageBlockTools } from './ImageBlockTools';
 import type { ConfidenceLevel } from '../../../features/corpus/model/types';
 
 type Props = {
@@ -14,7 +13,8 @@ type Props = {
   pinned: boolean;
   tags: string[];
   suggestedTags: string[];
-  imageCount: number;
+  productOptions: string[];
+  categoryOptions: string[];
   onSummaryChange: (value: string) => void;
   onProductChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
@@ -46,11 +46,31 @@ export function PropertiesRail(props: Props) {
           </label>
           <label className="block">
             <span className="mb-2 block text-xs uppercase tracking-[0.16em] text-muted">Product</span>
-            <Input value={props.product} onChange={(event) => props.onProductChange(event.target.value)} placeholder="Product or system" />
+            <Input
+              value={props.product}
+              onChange={(event) => props.onProductChange(event.target.value)}
+              placeholder="Product or system"
+              list="product-options"
+            />
+            <datalist id="product-options">
+              {props.productOptions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
           </label>
           <label className="block">
             <span className="mb-2 block text-xs uppercase tracking-[0.16em] text-muted">Category</span>
-            <Input value={props.category} onChange={(event) => props.onCategoryChange(event.target.value)} placeholder="Category" />
+            <Input
+              value={props.category}
+              onChange={(event) => props.onCategoryChange(event.target.value)}
+              placeholder="Category"
+              list="category-options"
+            />
+            <datalist id="category-options">
+              {props.categoryOptions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
           </label>
           <label className="block">
             <span className="mb-2 block text-xs uppercase tracking-[0.16em] text-muted">Aliases</span>
@@ -79,7 +99,6 @@ export function PropertiesRail(props: Props) {
 
       <TagEditor tags={props.tags} onAddTag={props.onAddTag} onRemoveTag={props.onRemoveTag} />
       <SuggestedTags suggestions={props.suggestedTags} onAccept={props.onAcceptSuggestion} />
-      <ImageBlockTools imageCount={props.imageCount} />
     </aside>
   );
 }

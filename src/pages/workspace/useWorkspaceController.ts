@@ -54,7 +54,6 @@ export function useWorkspaceController() {
   const [editorSession, setEditorSession] = useState<EditorSession>({ open: false, mode: 'closed', entry: null });
   const [viewerSession, setViewerSession] = useState<ViewerSession>({ open: false, entry: null });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [rankingOpen, setRankingOpen] = useState(false);
 
   const searchIndex = useMemo(() => buildIndex(corpus.entries), [corpus.entries]);
   const results = useMemo(() => queryIndex(searchIndex, query, filters), [filters, query, searchIndex]);
@@ -69,6 +68,10 @@ export function useWorkspaceController() {
 
   function updateFilters(next: Partial<SearchFilters>) {
     setFilters((current) => ({ ...current, ...next }));
+  }
+
+  function setSearchQuery(nextQuery: string) {
+    setQuery(nextQuery);
   }
 
   function openNewArticle() {
@@ -93,6 +96,41 @@ export function useWorkspaceController() {
   function closeEditor() {
     setEditorSession({ open: false, mode: 'closed', entry: null });
   }
+
+  function togglePinned(entryId: string) {
+    let updatedEntry: CorpusEntry | null = null;
+
+    setCorpus((current) => {
+      const entries = current.entries.map((entry) => {
+        if (entry.id !== entryId) {
+          return entry;
+        }
+
+        updatedEntry = {
+          ...entry,
+          pinned: !entry.pinned,
+          updatedAt: new Date().toISOString(),
+        };
+
+        return updatedEntry;
+      });
+
+      return { ...current, entries };
+    });
+
+    if (!updatedEntry) {
+      return;
+    }
+
+    if (viewerSession.open && viewerSession.entry?.id === entryId) {
+      setViewerSession({ open: true, entry: updatedEntry });
+    }
+
+    if (editorSession.open && editorSession.entry?.id === entryId) {
+      setEditorSession({ ...editorSession, entry: updatedEntry });
+    }
+  }
+
 
   function saveEntry(nextEntry: CorpusEntry) {
     setCorpus((current) => {
@@ -131,7 +169,7 @@ export function useWorkspaceController() {
     corpus,
     corpusName,
     query,
-    setQuery,
+    setQuery: setSearchQuery,
     filters,
     updateFilters,
     results,
@@ -146,10 +184,9 @@ export function useWorkspaceController() {
     openEditArticle,
     closeEditor,
     saveEntry,
+    togglePinned,
     loadCorpusFromFile,
     downloadCorpus,
     errorMessage,
-    rankingOpen,
-    setRankingOpen,
   };
 }

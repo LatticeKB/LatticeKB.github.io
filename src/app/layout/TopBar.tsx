@@ -18,10 +18,7 @@ export function TopBar({ corpusName, onLoadCorpus, onNewArticle, onDownloadJson 
               <DatabaseZap size={16} />
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <p className="text-sm font-semibold tracking-[0.18em] text-soft-linen uppercase">LatticeKB</p>
-                <p className="hidden text-xs text-muted sm:block">private / single json / dark</p>
-              </div>
+              <p className="text-sm font-semibold tracking-[0.18em] text-soft-linen uppercase">LatticeKB</p>
               <p className="truncate text-xs text-muted">{corpusName}</p>
             </div>
           </div>

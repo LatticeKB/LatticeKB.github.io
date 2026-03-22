@@ -10,11 +10,13 @@ type Props = {
   entry: CorpusEntry | null;
   onOpenArticle: (entry: CorpusEntry) => void;
   onEdit: (entry: CorpusEntry) => void;
+  onTogglePinned: (entryId: string) => void;
+  onSearchTag: (tag: string) => void;
 };
 
-export function PreviewPane({ entry, onOpenArticle, onEdit }: Props) {
+export function PreviewPane({ entry, onOpenArticle, onEdit, onTogglePinned, onSearchTag }: Props) {
   if (!entry) {
-    return <EmptyState>Select a result to inspect the article preview.</EmptyState>;
+    return <EmptyState>Hover a result to inspect the article preview.</EmptyState>;
   }
 
   const plainText = blocksToPlainText(entry.body.blocks);
@@ -28,11 +30,18 @@ export function PreviewPane({ entry, onOpenArticle, onEdit }: Props) {
             <span>{entry.product}</span>
             <span>/</span>
             <span>{entry.category}</span>
-            {entry.pinned ? <Pin size={12} className="text-teal" /> : null}
           </div>
           <h2 className="mt-3 text-xl font-semibold text-soft-linen">{entry.title}</h2>
           <p className="mt-3 text-sm leading-6 text-muted">{entry.summary || plainText.slice(0, 240) || 'No summary yet.'}</p>
         </div>
+        <Button
+          variant={entry.pinned ? 'solid' : 'ghost'}
+          className="rounded-full p-2"
+          aria-label={entry.pinned ? 'Unpin article' : 'Pin article'}
+          onClick={() => onTogglePinned(entry.id)}
+        >
+          <Pin size={14} className={entry.pinned ? 'text-teal' : ''} />
+        </Button>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -46,16 +55,10 @@ export function PreviewPane({ entry, onOpenArticle, onEdit }: Props) {
         </Button>
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-2xl border border-white/7 bg-white/[0.03] p-3">
-          <dt className="text-xs uppercase tracking-[0.14em] text-muted">Updated</dt>
-          <dd className="mt-2 text-soft-linen">{formatAbsoluteDate(entry.updatedAt)}</dd>
-        </div>
-        <div className="rounded-2xl border border-white/7 bg-white/[0.03] p-3">
-          <dt className="text-xs uppercase tracking-[0.14em] text-muted">State</dt>
-          <dd className="mt-2 text-soft-linen">Local-only / browser memory</dd>
-        </div>
-      </dl>
+      <div className="mt-6 rounded-2xl border border-white/7 bg-white/[0.03] p-3 text-sm">
+        <p className="text-xs uppercase tracking-[0.14em] text-muted">Updated</p>
+        <p className="mt-2 text-soft-linen">{formatAbsoluteDate(entry.updatedAt)}</p>
+      </div>
 
       <div className="mt-6">
         <div className="flex items-center justify-between">
@@ -69,9 +72,14 @@ export function PreviewPane({ entry, onOpenArticle, onEdit }: Props) {
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {entry.tags.map((tag) => (
-            <span key={tag} className="rounded-full border border-white/8 px-2.5 py-1 text-xs text-soft-linen">
+            <button
+              key={tag}
+              type="button"
+              onClick={() => onSearchTag(tag)}
+              className="rounded-full border border-white/8 px-2.5 py-1 text-xs text-soft-linen transition hover:border-teal/40 hover:bg-teal/10"
+            >
               {tag}
-            </span>
+            </button>
           ))}
           {entry.tags.length === 0 ? <span className="text-sm text-muted">No tags</span> : null}
         </div>
