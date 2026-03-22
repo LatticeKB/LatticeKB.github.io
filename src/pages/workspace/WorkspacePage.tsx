@@ -158,6 +158,18 @@ export function WorkspacePage() {
             )}
           </section>
         </WorkspaceLayout>
+
+        <footer className="mx-auto mt-8 flex w-full max-w-[1480px] flex-wrap items-center justify-between gap-3 px-5 pb-8 text-xs text-muted sm:px-6 lg:px-8">
+          <p>©2026 EquiWeb All Rights Reserved</p>
+          <a
+            href="https://equiweb.github.io"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-soft-linen underline decoration-white/20 underline-offset-4 transition hover:text-teal hover:decoration-teal/40"
+          >
+            EquiWeb
+          </a>
+        </footer>
       </div>
       <ArticleViewerModal
         open={controller.viewerSession.open}
