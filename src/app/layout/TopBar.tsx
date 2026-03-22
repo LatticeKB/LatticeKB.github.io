@@ -1,14 +1,15 @@
-import { DatabaseZap, Download, FileUp, FilePlus2 } from 'lucide-react';
+import { DatabaseZap, Download, FilePenLine, FilePlus2, FileUp } from 'lucide-react';
 import { Button } from '../../shared/ui/Button';
 
 type Props = {
   corpusName: string;
   onLoadCorpus: () => void;
+  onOpenScratchpad: () => void;
   onNewArticle: () => void;
   onDownloadJson: () => void;
 };
 
-export function TopBar({ corpusName, onLoadCorpus, onNewArticle, onDownloadJson }: Props) {
+export function TopBar({ corpusName, onLoadCorpus, onOpenScratchpad, onNewArticle, onDownloadJson }: Props) {
   return (
     <header className="border-b border-white/7 bg-black/8 backdrop-blur-sm">
       <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-4 px-5 py-4 sm:px-6 lg:px-8">
@@ -27,6 +28,10 @@ export function TopBar({ corpusName, onLoadCorpus, onNewArticle, onDownloadJson 
           <Button onClick={onLoadCorpus}>
             <FileUp size={16} />
             Load corpus
+          </Button>
+          <Button onClick={onOpenScratchpad}>
+            <FilePenLine size={16} />
+            Scratchpad
           </Button>
           <Button onClick={onNewArticle}>
             <FilePlus2 size={16} />

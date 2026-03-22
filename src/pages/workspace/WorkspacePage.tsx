@@ -14,13 +14,14 @@ import { SearchSection } from './components/SearchSection';
 import { useWorkspaceController } from './useWorkspaceController';
 
 const EditorModal = lazy(async () => import('../editor/EditorModal').then((module) => ({ default: module.EditorModal })));
+const ScratchpadModal = lazy(async () => import('../scratchpad/ScratchpadModal').then((module) => ({ default: module.ScratchpadModal })));
 
 export function WorkspacePage() {
   const controller = useWorkspaceController();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging] = useState(false);
   const [hoveredEntryId, setHoveredEntryId] = useState<string | null>(null);
-
+  const [scratchpadOpen, setScratchpadOpen] = useState(false);
   const resultMap = useMemo(
     () => new Map(controller.results.map((hit) => [hit.entry.id, hit.entry])),
     [controller.results],
@@ -59,6 +60,7 @@ export function WorkspacePage() {
       <TopBar
         corpusName={controller.corpusName}
         onLoadCorpus={() => fileInputRef.current?.click()}
+        onOpenScratchpad={() => setScratchpadOpen(true)}
         onNewArticle={controller.openNewArticle}
         onDownloadJson={controller.downloadCorpus}
       />
@@ -167,6 +169,7 @@ export function WorkspacePage() {
       />
 
       <Suspense fallback={null}>
+        <ScratchpadModal key={scratchpadOpen ? 'open' : 'closed'} open={scratchpadOpen} onClose={() => setScratchpadOpen(false)} />
         <EditorModal
           key={`${controller.editorSession.mode}-${controller.editorSession.entry?.id ?? 'none'}-${controller.editorSession.open ? 'open' : 'closed'}`}
           session={controller.editorSession}
