@@ -14,14 +14,15 @@ type Props = {
   session: EditorSession;
   onClose: () => void;
   onSave: (entry: CorpusEntry) => void;
+  onDelete: (entryId: string) => void;
   productOptions: string[];
   categoryOptions: string[];
 };
 
-export function EditorModal({ session, onClose, onSave, productOptions, categoryOptions }: Props) {
+export function EditorModal({ session, onClose, onSave, onDelete, productOptions, categoryOptions }: Props) {
   const [draft, setDraft] = useState<CorpusEntry | null>(() => session.entry);
   const [aliasesText, setAliasesText] = useState(() => session.entry?.aliases.join(', ') ?? '');
-
+  const [confirmDelete, setConfirmDelete] = useState(false);
   useEffect(() => {
     if (!session.open || !session.entry) {
       return;
@@ -42,6 +43,15 @@ export function EditorModal({ session, onClose, onSave, productOptions, category
       cancelled = true;
     };
   }, [session]);
+
+  useEffect(() => {
+    if (!confirmDelete) {
+      return;
+    }
+
+    const handle = window.setTimeout(() => setConfirmDelete(false), 3500);
+    return () => window.clearTimeout(handle);
+  }, [confirmDelete]);
 
   useEffect(() => {
     if (!session.open || !draft) {
@@ -111,6 +121,21 @@ export function EditorModal({ session, onClose, onSave, productOptions, category
     onSave(finalized);
   }
 
+  function handleDelete() {
+    if (session.mode !== 'edit') {
+      return;
+    }
+
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+
+    void clearDraft(currentDraft.id).catch(() => undefined);
+    setConfirmDelete(false);
+    onDelete(currentDraft.id);
+  }
+
   return (
     <Modal
       open={session.open}
@@ -136,6 +161,8 @@ export function EditorModal({ session, onClose, onSave, productOptions, category
           suggestedTags={suggestedTags}
           productOptions={productOptions}
           categoryOptions={categoryOptions}
+          canDelete={session.mode === 'edit'}
+          confirmDelete={confirmDelete}
           onSummaryChange={(summary) => patch({ summary })}
           onProductChange={(product) => patch({ product })}
           onCategoryChange={(category) => patch({ category })}
@@ -147,6 +174,7 @@ export function EditorModal({ session, onClose, onSave, productOptions, category
           onAddTag={addTag}
           onRemoveTag={removeTag}
           onAcceptSuggestion={addTag}
+          onDelete={handleDelete}
           onSave={handleSave}
         />
       </div>

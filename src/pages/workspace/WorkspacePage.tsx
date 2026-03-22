@@ -190,6 +190,7 @@ export function WorkspacePage() {
           session={controller.editorSession}
           onClose={controller.closeEditor}
           onSave={controller.saveEntry}
+          onDelete={controller.deleteEntry}
           productOptions={metadataOptions.products}
           categoryOptions={metadataOptions.categories}
         />

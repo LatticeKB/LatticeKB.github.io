@@ -96,6 +96,33 @@ export function useWorkspaceController() {
     setEditorSession({ open: false, mode: 'closed', entry: null });
   }
 
+  function deleteEntry(entryId: string) {
+    let didDelete = false;
+    let nextSelectedEntryId: string | null = null;
+
+    setCorpus((current) => {
+      const remainingEntries = current.entries.filter((entry) => entry.id !== entryId);
+
+      if (remainingEntries.length === current.entries.length) {
+        nextSelectedEntryId = selectedEntryId;
+        return current;
+      }
+
+      didDelete = true;
+      nextSelectedEntryId = selectedEntryId === entryId ? (remainingEntries[0]?.id ?? null) : (selectedEntryId ?? remainingEntries[0]?.id ?? null);
+
+      return { ...current, entries: remainingEntries };
+    });
+
+    if (!didDelete) {
+      return;
+    }
+
+    setSelectedEntryId(nextSelectedEntryId);
+    setViewerSession((current) => (current.entry?.id === entryId ? { open: false, entry: null } : current));
+    setEditorSession((current) => (current.entry?.id === entryId ? { open: false, mode: 'closed', entry: null } : current));
+  }
+
   function togglePinned(entryId: string) {
     let updatedEntry: CorpusEntry | null = null;
 
@@ -183,6 +210,7 @@ export function useWorkspaceController() {
     openEditArticle,
     closeEditor,
     saveEntry,
+    deleteEntry,
     togglePinned,
     loadCorpusFromFile,
     downloadCorpus,

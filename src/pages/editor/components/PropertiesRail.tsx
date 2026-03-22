@@ -1,3 +1,4 @@
+import { Trash2 } from 'lucide-react';
 import { Input } from '../../../shared/ui/Input';
 import { Button } from '../../../shared/ui/Button';
 import { TagPanels } from './TagPanels';
@@ -12,6 +13,8 @@ type Props = {
   suggestedTags: string[];
   productOptions: string[];
   categoryOptions: string[];
+  canDelete: boolean;
+  confirmDelete: boolean;
   onSummaryChange: (value: string) => void;
   onProductChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
@@ -20,6 +23,7 @@ type Props = {
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
   onAcceptSuggestion: (tag: string) => void;
+  onDelete: () => void;
   onSave: () => void;
 };
 
@@ -31,7 +35,15 @@ export function PropertiesRail(props: Props) {
           <p className="text-xs uppercase tracking-[0.18em] text-muted">Properties</p>
           <p className="mt-1 text-sm text-muted">Metadata stays in the same exported JSON.</p>
         </div>
-        <Button variant="solid" onClick={props.onSave}>Save</Button>
+        <div className="flex flex-wrap justify-end gap-2">
+          {props.canDelete ? (
+            <Button variant={props.confirmDelete ? 'danger' : 'ghost'} onClick={props.onDelete}>
+              <Trash2 size={16} />
+              {props.confirmDelete ? 'Confirm delete' : 'Delete article'}
+            </Button>
+          ) : null}
+          <Button variant="solid" onClick={props.onSave}>Save</Button>
+        </div>
       </div>
 
       <section className="rounded-3xl border border-white/8 bg-white/[0.025] p-4">
