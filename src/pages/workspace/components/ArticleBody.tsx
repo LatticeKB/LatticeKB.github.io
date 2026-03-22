@@ -123,6 +123,30 @@ function renderBlock(block: RenderNode, entry: CorpusEntry) {
         </figure>
       );
     }
+    case 'audio': {
+      const url = typeof block.props?.url === 'string' ? block.props.url : '';
+      if (!url) {
+        return null;
+      }
+
+      return (
+        <div key={key} className="rounded-2xl border border-white/8 bg-black/18 p-4">
+          <audio controls className="w-full" src={url} />
+        </div>
+      );
+    }
+    case 'video': {
+      const url = typeof block.props?.url === 'string' ? block.props.url : '';
+      if (!url) {
+        return null;
+      }
+
+      return (
+        <div key={key} className="overflow-hidden rounded-[26px] border border-white/8 bg-black/18 p-2">
+          <video controls className="block max-h-[70vh] w-full rounded-[18px] bg-black/30" src={url} />
+        </div>
+      );
+    }
     case 'file': {
       const url = typeof block.props?.url === 'string' ? block.props.url : '';
       const name = typeof block.props?.name === 'string' ? block.props.name : 'Attached file';

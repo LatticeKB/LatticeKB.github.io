@@ -24,6 +24,14 @@ function renderBlocks(entry: CorpusEntry) {
         return `<figure><img src="${props.url}" alt="${escapeHtml(alt)}" />${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}</figure>`;
       }
 
+      if (type === 'audio' && typeof props.url === 'string' && props.url) {
+        return `<figure><audio controls src="${props.url}"></audio></figure>`;
+      }
+
+      if (type === 'video' && typeof props.url === 'string' && props.url) {
+        return `<figure><video controls src="${props.url}"></video></figure>`;
+      }
+
       if (type === 'heading') {
         const level = Number(props.level ?? 2);
         const tag = level <= 2 ? 'h2' : 'h3';
@@ -68,8 +76,10 @@ export function openArticleInNewTab(entry: CorpusEntry) {
     .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 28px; }
     .chips span { border: 1px solid rgba(236,235,228,0.12); border-radius: 999px; padding: 6px 10px; font-size: 12px; color: #ecebe4; }
     figure { margin: 22px 0; border: 1px solid rgba(236,235,228,0.1); border-radius: 22px; overflow: hidden; background: rgba(0,0,0,0.16); }
-    img { display: block; width: 100%; max-height: 70vh; object-fit: contain; background: rgba(0,0,0,0.28); }
+    img, video { display: block; width: 100%; max-height: 70vh; object-fit: contain; background: rgba(0,0,0,0.28); }
+    audio { display: block; width: 100%; }
     figcaption { padding: 12px 16px; color: #a8a19f; font-size: 14px; border-top: 1px solid rgba(236,235,228,0.08); }
+    a { color: #087f8c; text-underline-offset: 4px; }
     .list-item { padding-left: 2px; }
   </style>
 </head>
