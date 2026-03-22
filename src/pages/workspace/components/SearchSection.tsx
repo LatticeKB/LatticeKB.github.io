@@ -1,13 +1,11 @@
-import { QueryChips } from './QueryChips';
 import { SearchBar } from './SearchBar';
 
 type Props = {
   query: string;
   onQueryChange: (value: string) => void;
-  onQuickQuery: (value: string) => void;
 };
 
-export function SearchSection({ query, onQueryChange, onQuickQuery }: Props) {
+export function SearchSection({ query, onQueryChange }: Props) {
   return (
     <section className="mx-auto max-w-5xl px-5 pt-8 pb-8 sm:px-6 lg:px-8">
       <div className="text-center">
@@ -18,7 +16,6 @@ export function SearchSection({ query, onQueryChange, onQuickQuery }: Props) {
       </div>
       <div className="mt-8">
         <SearchBar query={query} onQueryChange={onQueryChange} />
-        <QueryChips onSelect={onQuickQuery} />
       </div>
     </section>
   );

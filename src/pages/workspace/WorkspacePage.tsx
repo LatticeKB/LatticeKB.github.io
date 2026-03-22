@@ -88,7 +88,6 @@ export function WorkspacePage() {
         <SearchSection
           query={controller.query}
           onQueryChange={controller.setQuery}
-          onQuickQuery={controller.setQuery}
         />
 
         <WorkspaceLayout
