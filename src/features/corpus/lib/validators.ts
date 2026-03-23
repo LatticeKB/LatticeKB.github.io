@@ -1,8 +1,8 @@
 import { ZodError } from 'zod';
 import { corpusSchema } from '../model/schema';
-import type { CorpusFile } from '../model/types';
+import type { CorpusInput } from '../model/types';
 
-export function validateCorpus(candidate: unknown): CorpusFile {
+export function validateCorpus(candidate: unknown): CorpusInput {
   try {
     return corpusSchema.parse(candidate);
   } catch (error) {
