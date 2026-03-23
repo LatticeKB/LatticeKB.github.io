@@ -7,6 +7,7 @@ import { StatePanel } from '../../shared/ui/StatePanel';
 import { Button } from '../../shared/ui/Button';
 import { FiltersBar } from './components/FiltersBar';
 import { ArticleViewerModal } from './components/ArticleViewerModal';
+import { CorpusSyncBanner } from './components/CorpusSyncBanner';
 import { PreviewPane } from './components/PreviewPane';
 import { ResultList } from './components/ResultList';
 import { SearchSection } from './components/SearchSection';
@@ -105,6 +106,10 @@ export function WorkspacePage() {
           <section className="space-y-5">
             {controller.errorMessage ? (
               <StatePanel variant="error" title="Import failed" detail={controller.errorMessage} />
+            ) : null}
+
+            {controller.hasUnsyncedCorpusChanges ? (
+              <CorpusSyncBanner syncState={controller.corpusSyncState} onDownload={controller.downloadCorpus} />
             ) : null}
 
             <div className="rounded-[28px] border border-white/8 bg-black/12 p-4">

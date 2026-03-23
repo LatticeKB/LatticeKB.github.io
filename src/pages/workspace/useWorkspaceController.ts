@@ -9,6 +9,7 @@ import { downloadTextFile } from '../../shared/lib/download';
 import { importCorpus } from '../../features/corpus/lib/importCorpus';
 import { setLastCorpusName, getLastCorpusName } from '../../features/persistence/lib/localState';
 import { createId } from '../../shared/lib/ids';
+import { createCorpusSyncState, hasPendingCorpusChanges } from './model/corpusSync';
 
 const defaultFilters: SearchFilters = {
   pinnedOnly: false,
@@ -45,14 +46,16 @@ function createEmptyEntry(): CorpusEntry {
 }
 
 export function useWorkspaceController() {
+  const initialCorpusName = getLastCorpusName() ?? 'sample-corpus.json';
   const [corpus, setCorpus] = useState<CorpusFile>(sampleCorpus);
-  const [corpusName, setCorpusName] = useState(getLastCorpusName() ?? 'sample-corpus.json');
+  const [corpusName, setCorpusName] = useState(initialCorpusName);
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(sampleCorpus.entries[0]?.id ?? null);
   const [editorSession, setEditorSession] = useState<EditorSession>({ open: false, mode: 'closed', entry: null });
   const [viewerSession, setViewerSession] = useState<ViewerSession>({ open: false, entry: null });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [corpusSyncState, setCorpusSyncState] = useState(() => createCorpusSyncState(sampleCorpus, initialCorpusName, 'sample'));
 
   const searchIndex = useMemo(() => buildIndex(corpus.entries), [corpus.entries]);
   const results = useMemo(() => queryIndex(searchIndex, query, filters), [filters, query, searchIndex]);
@@ -63,6 +66,7 @@ export function useWorkspaceController() {
 
     return corpus.entries.find((entry) => entry.id === selectedEntryId) ?? results[0]?.entry ?? null;
   }, [corpus.entries, results, selectedEntryId]);
+  const hasUnsyncedCorpusChanges = useMemo(() => hasPendingCorpusChanges(corpusSyncState, corpus), [corpus, corpusSyncState]);
 
 
   function updateFilters(next: Partial<SearchFilters>) {
@@ -177,6 +181,7 @@ export function useWorkspaceController() {
       setCorpus(imported.corpus);
       setCorpusName(imported.filename);
       setLastCorpusName(imported.filename);
+      setCorpusSyncState(createCorpusSyncState(imported.corpus, imported.filename, 'file'));
       setSelectedEntryId(imported.corpus.entries[0]?.id ?? null);
       setViewerSession({ open: false, entry: null });
       setEditorSession({ open: false, mode: 'closed', entry: null });
@@ -188,7 +193,13 @@ export function useWorkspaceController() {
 
   function downloadCorpus() {
     const safeName = corpusName.endsWith('.json') ? corpusName : 'corpus.json';
-    downloadTextFile(safeName, exportCorpus(corpus));
+    const snapshot = exportCorpus(corpus);
+    downloadTextFile(safeName, snapshot);
+    setCorpusSyncState({
+      baselineSnapshot: snapshot,
+      baselineName: safeName,
+      origin: 'download',
+    });
   }
 
   return {
@@ -214,6 +225,8 @@ export function useWorkspaceController() {
     togglePinned,
     loadCorpusFromFile,
     downloadCorpus,
+    corpusSyncState,
+    hasUnsyncedCorpusChanges,
     errorMessage,
   };
 }
