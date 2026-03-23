@@ -4,7 +4,7 @@ import { createId } from '../../../shared/lib/ids';
 const now = new Date().toISOString();
 
 export const sampleCorpus: CorpusFile = {
-  version: '1.1',
+  version: '1.2',
   owner: {
     name: 'LatticeKB Demo',
     team: 'IT Support',
@@ -119,4 +119,7 @@ export const sampleCorpus: CorpusFile = {
       },
     },
   ],
+  searchMetrics: {
+    entries: {},
+  },
 };

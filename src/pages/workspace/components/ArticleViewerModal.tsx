@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { ExternalLink, FilePenLine } from 'lucide-react';
+import type { ArticleReadSession } from '../../../features/corpus/lib/searchMetrics';
 import type { CorpusEntry } from '../../../features/corpus/model/types';
 import { formatAbsoluteDate } from '../../../shared/lib/dates';
 import { Button } from '../../../shared/ui/Button';
@@ -11,9 +13,77 @@ type Props = {
   onClose: () => void;
   onEdit: (entry: CorpusEntry) => void;
   onOpenInNewTab: (entry: CorpusEntry) => void;
+  onReadSessionComplete: (entry: CorpusEntry, session: ArticleReadSession) => void;
 };
 
-export function ArticleViewerModal({ entry, open, onClose, onEdit, onOpenInNewTab }: Props) {
+type ReadSessionState = {
+  entry: CorpusEntry;
+  activeStartedAt: number | null;
+  visibleDwellMs: number;
+};
+
+export function ArticleViewerModal({ entry, open, onClose, onEdit, onOpenInNewTab, onReadSessionComplete }: Props) {
+  const sessionRef = useRef<ReadSessionState | null>(null);
+
+  useEffect(() => {
+    if (!open || !entry) {
+      sessionRef.current = null;
+      return;
+    }
+
+    const session: ReadSessionState = {
+      entry,
+      activeStartedAt: null,
+      visibleDwellMs: 0,
+    };
+    sessionRef.current = session;
+
+    const isActive = () => document.visibilityState === 'visible' && document.hasFocus();
+    const resume = () => {
+      if (session.activeStartedAt !== null || !isActive()) {
+        return;
+      }
+
+      session.activeStartedAt = Date.now();
+    };
+    const pause = () => {
+      if (session.activeStartedAt === null) {
+        return;
+      }
+
+      session.visibleDwellMs += Date.now() - session.activeStartedAt;
+      session.activeStartedAt = null;
+    };
+    const finalize = () => {
+      pause();
+      onReadSessionComplete(session.entry, {
+        visibleDwellMs: session.visibleDwellMs,
+        completedAt: new Date().toISOString(),
+      });
+      sessionRef.current = null;
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        resume();
+        return;
+      }
+
+      pause();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', resume);
+    window.addEventListener('blur', pause);
+    resume();
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', resume);
+      window.removeEventListener('blur', pause);
+      finalize();
+    };
+  }, [entry, onReadSessionComplete, open]);
+
   if (!open || !entry) {
     return null;
   }

@@ -1,6 +1,7 @@
-import type { CorpusEntry, CorpusFile, EntryBody } from '../model/types';
+import type { CorpusEntry, CorpusFile, CorpusInput, EntryBody } from '../model/types';
 import { createId } from '../../../shared/lib/ids';
 import { normalizeTags } from '../../tags/lib/normalizeTags';
+import { normalizeSearchMetrics } from './searchMetrics';
 
 function normalizeBody(body: EntryBody | undefined): EntryBody {
   return {
@@ -26,13 +27,16 @@ function normalizeEntry(entry: CorpusEntry): CorpusEntry {
   };
 }
 
-export function normalizeCorpus(corpus: CorpusFile): CorpusFile {
+export function normalizeCorpus(corpus: CorpusInput): CorpusFile {
+  const entries = corpus.entries.map(normalizeEntry);
+
   return {
-    version: '1.1',
+    version: '1.2',
     owner: {
       name: corpus.owner.name?.trim() || undefined,
       team: corpus.owner.team?.trim() || 'IT Support',
     },
-    entries: corpus.entries.map(normalizeEntry),
+    entries,
+    searchMetrics: normalizeSearchMetrics('searchMetrics' in corpus ? corpus.searchMetrics : undefined, entries.map((entry) => entry.id)),
   };
 }

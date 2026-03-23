@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { CorpusInput } from './types';
 
 const storedBlockSchema = z.record(z.string(), z.unknown());
 
@@ -21,11 +22,34 @@ export const corpusEntrySchema = z.object({
   body: entryBodySchema,
 });
 
-export const corpusSchema = z.object({
-  version: z.literal('1.1'),
+export const searchMetricEntrySchema = z.object({
+  openCount: z.number().int().nonnegative().default(0),
+  qualifiedViewCount: z.number().int().nonnegative().default(0),
+  shortAbandonCount: z.number().int().nonnegative().default(0),
+  totalQualifiedDwellSeconds: z.number().int().nonnegative().default(0),
+  longViewCount: z.number().int().nonnegative().default(0),
+  lastViewedAt: z.string().datetime({ offset: true }).optional(),
+});
+
+export const searchMetricsSchema = z.object({
+  entries: z.record(z.string(), searchMetricEntrySchema).default({}),
+});
+
+const corpusBaseSchema = z.object({
   owner: z.object({
     name: z.string().optional(),
     team: z.string().optional(),
   }),
   entries: z.array(corpusEntrySchema),
 });
+
+const legacyCorpusSchema = corpusBaseSchema.extend({
+  version: z.literal('1.1'),
+});
+
+const currentCorpusSchema = corpusBaseSchema.extend({
+  version: z.literal('1.2'),
+  searchMetrics: searchMetricsSchema,
+});
+
+export const corpusSchema = z.union([legacyCorpusSchema, currentCorpusSchema]) satisfies z.ZodType<CorpusInput>;

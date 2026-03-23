@@ -1,5 +1,6 @@
 import type { CorpusEntry } from '../model/types';
 import { contentToPlainText } from '../../editor/lib/blockTransforms';
+import { ARTICLE_TELEMETRY_CHANNEL } from './searchMetrics';
 
 function escapeHtml(value: string) {
   return value
@@ -57,7 +58,81 @@ function renderBlocks(entry: CorpusEntry) {
     .join('');
 }
 
-export function openArticleInNewTab(entry: CorpusEntry) {
+function serializeScriptLiteral(value: string) {
+  return JSON.stringify(value).replaceAll('</', '<\\/');
+}
+
+function buildTelemetryScript(entryId: string, corpusName: string) {
+  return `<script>
+(() => {
+  const payload = {
+    entryId: ${serializeScriptLiteral(entryId)},
+    corpusName: ${serializeScriptLiteral(corpusName)},
+    channelName: ${serializeScriptLiteral(ARTICLE_TELEMETRY_CHANNEL)}
+  };
+  if (typeof BroadcastChannel === 'undefined') {
+    return;
+  }
+
+  const channel = new BroadcastChannel(payload.channelName);
+  let visibleDwellMs = 0;
+  let activeStartedAt = null;
+  let finalized = false;
+
+  const isActive = () => document.visibilityState === 'visible' && document.hasFocus();
+  const resume = () => {
+    if (activeStartedAt !== null || !isActive()) {
+      return;
+    }
+
+    activeStartedAt = Date.now();
+  };
+  const pause = () => {
+    if (activeStartedAt === null) {
+      return;
+    }
+
+    visibleDwellMs += Date.now() - activeStartedAt;
+    activeStartedAt = null;
+  };
+  const finalize = () => {
+    if (finalized) {
+      return;
+    }
+
+    pause();
+    finalized = true;
+    channel.postMessage({
+      type: 'session',
+      corpusName: payload.corpusName,
+      entryId: payload.entryId,
+      session: {
+        visibleDwellMs,
+        completedAt: new Date().toISOString()
+      }
+    });
+    channel.close();
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      resume();
+      return;
+    }
+
+    pause();
+  });
+  window.addEventListener('focus', resume);
+  window.addEventListener('blur', pause);
+  window.addEventListener('pagehide', finalize, { once: true });
+  window.addEventListener('beforeunload', finalize, { once: true });
+
+  resume();
+})();
+</script>`;
+}
+
+export function openArticleInNewTab(entry: CorpusEntry, corpusName: string) {
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -91,6 +166,7 @@ export function openArticleInNewTab(entry: CorpusEntry) {
     <div class="chips">${entry.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
     ${renderBlocks(entry)}
   </main>
+  ${buildTelemetryScript(entry.id, corpusName)}
 </body>
 </html>`;
 

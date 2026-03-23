@@ -2,7 +2,6 @@ import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { AppWindow, Upload } from 'lucide-react';
 import { TopBar } from '../../app/layout/TopBar';
 import { WorkspaceLayout } from '../../app/layout/WorkspaceLayout';
-import { openArticleInNewTab } from '../../features/corpus/lib/openArticleInNewTab';
 import { StatePanel } from '../../shared/ui/StatePanel';
 import { Button } from '../../shared/ui/Button';
 import { FiltersBar } from './components/FiltersBar';
@@ -105,7 +104,7 @@ export function WorkspacePage() {
         >
           <section className="space-y-5">
             {controller.errorMessage ? (
-              <StatePanel variant="error" title="Import failed" detail={controller.errorMessage} />
+              <StatePanel variant="error" title="Workspace issue" detail={controller.errorMessage} />
             ) : null}
 
             {controller.hasUnsyncedCorpusChanges ? (
@@ -124,7 +123,14 @@ export function WorkspacePage() {
               </div>
             </div>
 
-            {dragging ? (
+            {!controller.workspaceReady ? (
+              <StatePanel centered>
+                <div>
+                  <p className="font-medium text-soft-linen">Restoring workspace</p>
+                  <p className="mt-1 text-muted">Loading the last local corpus snapshot before rebuilding search.</p>
+                </div>
+              </StatePanel>
+            ) : dragging ? (
               <StatePanel centered>
                 <div className="flex flex-col items-center gap-3">
                   <Upload className="text-teal" size={20} />
@@ -134,9 +140,7 @@ export function WorkspacePage() {
                   </div>
                 </div>
               </StatePanel>
-            ) : null}
-
-            {!dragging && controller.corpus.entries.length === 0 ? (
+            ) : controller.corpus.entries.length === 0 ? (
               <StatePanel centered>
                 <div className="flex flex-col items-center gap-3">
                   <AppWindow size={20} className="text-teal" />
@@ -185,7 +189,8 @@ export function WorkspacePage() {
         entry={controller.viewerSession.entry}
         onClose={controller.closeViewer}
         onEdit={controller.openEditArticle}
-        onOpenInNewTab={openArticleInNewTab}
+        onOpenInNewTab={controller.openArticleInNewTab}
+        onReadSessionComplete={controller.finalizeArticleReadSession}
       />
 
       <Suspense fallback={null}>
