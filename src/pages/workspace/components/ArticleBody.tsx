@@ -33,6 +33,7 @@ function ReadonlyArticleDocument({ blocks }: ReadonlyArticleDocumentProps) {
       <BlockNoteView
         editor={editor as BlockNoteEditor}
         editable={false}
+        theme="dark"
         sideMenu={false}
         formattingToolbar={false}
         slashMenu={false}
