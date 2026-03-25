@@ -12,6 +12,7 @@ const COPIED_RESET_MS = 2000;
 
 export function ShareArticleButton({ entry }: Props) {
   const [copied, setCopied] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!copied) {
@@ -25,16 +26,21 @@ export function ShareArticleButton({ entry }: Props) {
   async function handleShare() {
     try {
       await navigator.clipboard.writeText(buildShareArticleUrl(entry));
+      setErrorMessage(null);
       setCopied(true);
-    } catch {
+    } catch (error) {
       setCopied(false);
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to copy share link.');
     }
   }
 
   return (
-    <Button variant={copied ? 'solid' : 'ghost'} onClick={() => void handleShare()}>
-      {copied ? <Check size={16} /> : <Share2 size={16} />}
-      {copied ? 'Copied' : 'Share'}
-    </Button>
+    <div className="flex flex-col items-start gap-1">
+      <Button variant={copied ? 'solid' : 'ghost'} onClick={() => void handleShare()}>
+        {copied ? <Check size={16} /> : <Share2 size={16} />}
+        {copied ? 'Copied' : 'Share'}
+      </Button>
+      {errorMessage ? <p className="max-w-[22rem] text-xs leading-5 text-rose-200">{errorMessage}</p> : null}
+    </div>
   );
 }

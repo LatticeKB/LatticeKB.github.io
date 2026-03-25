@@ -6,6 +6,7 @@ const ARTICLE_PREVIEW_QUERY_PARAM = 'articlePreview';
 const SHARED_ARTICLE_QUERY_PARAM = 'sharedArticle';
 const ARTICLE_PREVIEW_STORAGE_PREFIX = 'latticekb:article-preview:';
 const ARTICLE_PREVIEW_TTL_MS = 1000 * 60 * 60 * 24;
+const MAX_SHARE_URL_LENGTH = 2083;
 
 const storedArticlePreviewSchema = z.object({
   savedAt: z.string().datetime({ offset: true }),
@@ -74,7 +75,12 @@ function buildPreviewUrl(queryParam: string, value: string) {
 }
 
 export function buildShareArticleUrl(entry: CorpusEntry) {
-  return buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(entry));
+  const shareUrl = buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(entry));
+  if (shareUrl.length > MAX_SHARE_URL_LENGTH) {
+    throw new Error('Share link is too long for reliable browser support. Remove large embedded media before sharing this article.');
+  }
+
+  return shareUrl;
 }
 
 export function getArticlePreviewStorageKey(locationSearch = window.location.search) {
