@@ -3,6 +3,7 @@ import { corpusEntrySchema } from '../model/schema';
 import type { CorpusEntry } from '../model/types';
 
 const ARTICLE_PREVIEW_QUERY_PARAM = 'articlePreview';
+const SHARED_ARTICLE_QUERY_PARAM = 'sharedArticle';
 const ARTICLE_PREVIEW_STORAGE_PREFIX = 'latticekb:article-preview:';
 const ARTICLE_PREVIEW_TTL_MS = 1000 * 60 * 60 * 24;
 
@@ -13,6 +14,30 @@ const storedArticlePreviewSchema = z.object({
 
 function isArticlePreviewStorageKey(key: string) {
   return key.startsWith(ARTICLE_PREVIEW_STORAGE_PREFIX);
+}
+
+function bytesToBase64Url(bytes: Uint8Array) {
+  const binary = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join('');
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
+}
+
+function base64UrlToBytes(value: string) {
+  const padded = value.replaceAll('-', '+').replaceAll('_', '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
+  const binary = atob(padded);
+  return Uint8Array.from(binary, (char) => char.codePointAt(0) ?? 0);
+}
+
+function encodeSharedArticlePreview(entry: CorpusEntry) {
+  return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(entry)));
+}
+
+function decodeSharedArticlePreview(value: string) {
+  try {
+    const json = new TextDecoder().decode(base64UrlToBytes(value));
+    return corpusEntrySchema.parse(JSON.parse(json));
+  } catch {
+    return null;
+  }
 }
 
 function pruneExpiredArticlePreviews(storage: Storage) {
@@ -42,14 +67,27 @@ function pruneExpiredArticlePreviews(storage: Storage) {
   }
 }
 
-function buildArticlePreviewUrl(storageKey: string) {
+function buildPreviewUrl(queryParam: string, value: string) {
   const url = new URL(window.location.pathname, window.location.origin);
-  url.searchParams.set(ARTICLE_PREVIEW_QUERY_PARAM, storageKey);
+  url.searchParams.set(queryParam, value);
   return url.toString();
+}
+
+export function buildShareArticleUrl(entry: CorpusEntry) {
+  return buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(entry));
 }
 
 export function getArticlePreviewStorageKey(locationSearch = window.location.search) {
   return new URLSearchParams(locationSearch).get(ARTICLE_PREVIEW_QUERY_PARAM);
+}
+
+export function getSharedArticlePayload(locationSearch = window.location.search) {
+  return new URLSearchParams(locationSearch).get(SHARED_ARTICLE_QUERY_PARAM);
+}
+
+export function isArticlePreviewRequest(locationSearch = window.location.search) {
+  const searchParams = new URLSearchParams(locationSearch);
+  return searchParams.has(ARTICLE_PREVIEW_QUERY_PARAM) || searchParams.has(SHARED_ARTICLE_QUERY_PARAM);
 }
 
 export function readStoredArticlePreview(storageKey: string) {
@@ -67,6 +105,24 @@ export function readStoredArticlePreview(storageKey: string) {
   }
 }
 
+export function readSharedArticlePreview(payload: string) {
+  return decodeSharedArticlePreview(payload);
+}
+
+export function resolveArticlePreviewEntry(locationSearch = window.location.search) {
+  const sharedPayload = getSharedArticlePayload(locationSearch);
+  if (sharedPayload) {
+    return readSharedArticlePreview(sharedPayload);
+  }
+
+  const storageKey = getArticlePreviewStorageKey(locationSearch);
+  if (!storageKey) {
+    return null;
+  }
+
+  return readStoredArticlePreview(storageKey);
+}
+
 export function openArticleInNewTab(entry: CorpusEntry) {
   pruneExpiredArticlePreviews(localStorage);
 
@@ -79,5 +135,5 @@ export function openArticleInNewTab(entry: CorpusEntry) {
     }),
   );
 
-  window.open(buildArticlePreviewUrl(storageKey), '_blank', 'noopener,noreferrer');
+  window.open(buildPreviewUrl(ARTICLE_PREVIEW_QUERY_PARAM, storageKey), '_blank', 'noopener,noreferrer');
 }

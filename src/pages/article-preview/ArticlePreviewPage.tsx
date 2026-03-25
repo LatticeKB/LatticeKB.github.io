@@ -1,6 +1,7 @@
 import type { CorpusEntry } from '../../features/corpus/model/types';
 import { StatePanel } from '../../shared/ui/StatePanel';
 import { ArticleViewerContent } from '../workspace/components/ArticleViewerContent';
+import { ShareArticleButton } from '../workspace/components/ShareArticleButton';
 
 type Props = {
   entry: CorpusEntry | null;
@@ -12,7 +13,7 @@ export function ArticlePreviewPage({ entry }: Props) {
       <div className="mx-auto max-w-[1080px]">
         <main className="rounded-[32px] border border-white/8 bg-panel/75 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.28)] sm:p-6 lg:p-8">
           {entry ? (
-            <ArticleViewerContent entry={entry} />
+            <ArticleViewerContent entry={entry} actions={<ShareArticleButton entry={entry} />} />
           ) : (
             <StatePanel
               title="Preview unavailable"

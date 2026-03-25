@@ -3,6 +3,7 @@ import type { CorpusEntry } from '../../../features/corpus/model/types';
 import { Button } from '../../../shared/ui/Button';
 import { Modal } from '../../../shared/ui/Modal';
 import { ArticleViewerContent } from './ArticleViewerContent';
+import { ShareArticleButton } from './ShareArticleButton';
 
 type Props = {
   entry: CorpusEntry | null;
@@ -30,6 +31,7 @@ export function ArticleViewerModal({ entry, open, onClose, onEdit, onOpenInNewTa
           entry={entry}
           actions={
             <>
+              <ShareArticleButton entry={entry} />
               <Button variant="ghost" onClick={() => onOpenInNewTab(entry)}>
                 <ExternalLink size={16} />
                 Open in new tab
