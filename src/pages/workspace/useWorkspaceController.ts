@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CorpusEntry, CorpusFile } from '../../features/corpus/model/types';
 import { sampleCorpus } from '../../features/corpus/model/sampleCorpus';
 import { buildIndex } from '../../features/search/lib/buildIndex';
@@ -8,6 +8,7 @@ import { exportCorpus } from '../../features/corpus/lib/exportCorpus';
 import { downloadTextFile } from '../../shared/lib/download';
 import { importCorpus } from '../../features/corpus/lib/importCorpus';
 import { setLastCorpusName, getLastCorpusName } from '../../features/persistence/lib/localState';
+import { readWorkspaceState, saveWorkspaceState } from '../../features/persistence/lib/workspaceStore';
 import { createId } from '../../shared/lib/ids';
 import { createCorpusSyncState, hasPendingCorpusChanges } from './model/corpusSync';
 
@@ -47,6 +48,7 @@ function createEmptyEntry(): CorpusEntry {
 
 export function useWorkspaceController() {
   const initialCorpusName = getLastCorpusName() ?? 'sample-corpus.json';
+  const [workspaceReady, setWorkspaceReady] = useState(false);
   const [corpus, setCorpus] = useState<CorpusFile>(sampleCorpus);
   const [corpusName, setCorpusName] = useState(initialCorpusName);
   const [query, setQuery] = useState('');
@@ -56,6 +58,53 @@ export function useWorkspaceController() {
   const [viewerSession, setViewerSession] = useState<ViewerSession>({ open: false, entry: null });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [corpusSyncState, setCorpusSyncState] = useState(() => createCorpusSyncState(sampleCorpus, initialCorpusName, 'sample'));
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    void readWorkspaceState()
+      .then((storedWorkspace) => {
+        if (isCancelled || !storedWorkspace) {
+          return;
+        }
+
+        setCorpus(storedWorkspace.corpus);
+        setCorpusName(storedWorkspace.corpusName);
+        setSelectedEntryId(storedWorkspace.selectedEntryId ?? storedWorkspace.corpus.entries[0]?.id ?? null);
+        setCorpusSyncState(storedWorkspace.corpusSyncState);
+        setLastCorpusName(storedWorkspace.corpusName);
+      })
+      .catch((error) => {
+        if (!isCancelled) {
+          setErrorMessage(error instanceof Error ? error.message : 'Unable to restore local workspace.');
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setWorkspaceReady(true);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!workspaceReady) {
+      return;
+    }
+
+    setLastCorpusName(corpusName);
+    void saveWorkspaceState({
+      corpus,
+      corpusName,
+      selectedEntryId,
+      corpusSyncState,
+    }).catch((error) => {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to save active workspace.');
+    });
+  }, [corpus, corpusName, corpusSyncState, selectedEntryId, workspaceReady]);
 
   const searchIndex = useMemo(() => buildIndex(corpus.entries), [corpus.entries]);
   const results = useMemo(() => queryIndex(searchIndex, query, filters), [filters, query, searchIndex]);
@@ -67,7 +116,6 @@ export function useWorkspaceController() {
     return corpus.entries.find((entry) => entry.id === selectedEntryId) ?? results[0]?.entry ?? null;
   }, [corpus.entries, results, selectedEntryId]);
   const hasUnsyncedCorpusChanges = useMemo(() => hasPendingCorpusChanges(corpusSyncState, corpus), [corpus, corpusSyncState]);
-
 
   function updateFilters(next: Partial<SearchFilters>) {
     setFilters((current) => ({ ...current, ...next }));
@@ -161,7 +209,6 @@ export function useWorkspaceController() {
     }
   }
 
-
   function saveEntry(nextEntry: CorpusEntry) {
     setCorpus((current) => {
       const exists = current.entries.some((entry) => entry.id === nextEntry.id);
@@ -203,6 +250,7 @@ export function useWorkspaceController() {
   }
 
   return {
+    workspaceReady,
     corpus,
     corpusName,
     query,

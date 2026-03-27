@@ -33,9 +33,11 @@ export function WorkspacePage() {
     }),
     [controller.corpus.entries],
   );
-  const previewEntry = hoveredEntryId
-    ? resultMap.get(hoveredEntryId) ?? controller.corpus.entries.find((item) => item.id === hoveredEntryId) ?? controller.selectedEntry
-    : controller.selectedEntry;
+  const previewEntry = controller.workspaceReady
+    ? (hoveredEntryId
+        ? resultMap.get(hoveredEntryId) ?? controller.corpus.entries.find((item) => item.id === hoveredEntryId) ?? controller.selectedEntry
+        : controller.selectedEntry)
+    : null;
 
   async function handleFileSelection(fileList: FileList | null) {
     const file = fileList?.[0];
@@ -105,61 +107,67 @@ export function WorkspacePage() {
         >
           <section className="space-y-5">
             {controller.errorMessage ? (
-              <StatePanel variant="error" title="Import failed" detail={controller.errorMessage} />
+              <StatePanel variant="error" title="Workspace issue" detail={controller.errorMessage} />
             ) : null}
 
-            {controller.hasUnsyncedCorpusChanges ? (
-              <CorpusSyncBanner syncState={controller.corpusSyncState} onDownload={controller.downloadCorpus} />
-            ) : null}
-
-            <div className="rounded-[28px] border border-white/8 bg-black/12 p-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-muted">Workspace</p>
-                  <p className="mt-1 text-sm text-muted">
-                    {controller.results.length} results from {controller.corpus.entries.length} articles.
-                  </p>
-                </div>
-                <FiltersBar filters={controller.filters} onChange={controller.updateFilters} />
-              </div>
-            </div>
-
-            {dragging ? (
-              <StatePanel centered>
-                <div className="flex flex-col items-center gap-3">
-                  <Upload className="text-teal" size={20} />
-                  <div>
-                    <p className="font-medium text-soft-linen">Drop corpus.json to replace the current workspace</p>
-                    <p className="mt-1 text-muted">Schema is validated locally before the in-browser index is rebuilt.</p>
-                  </div>
-                </div>
-              </StatePanel>
-            ) : null}
-
-            {!dragging && controller.corpus.entries.length === 0 ? (
-              <StatePanel centered>
-                <div className="flex flex-col items-center gap-3">
-                  <AppWindow size={20} className="text-teal" />
-                  <div>
-                    <p className="font-medium text-soft-linen">No articles loaded</p>
-                    <p className="mt-1 text-muted">Load a corpus or create the first article directly in the browser.</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => fileInputRef.current?.click()}>Load corpus</Button>
-                    <Button variant="solid" onClick={controller.openNewArticle}>
-                      New article
-                    </Button>
-                  </div>
-                </div>
-              </StatePanel>
+            {!controller.workspaceReady ? (
+              <StatePanel centered>Restoring the last browser workspace…</StatePanel>
             ) : (
-              <ResultList
-                results={controller.results}
-                selectedEntryId={hoveredEntryId ?? controller.selectedEntryId}
-                onOpenArticle={openResultArticle}
-                onHoverArticle={setHoveredEntryId}
-                onTogglePinned={controller.togglePinned}
-              />
+              <>
+                {controller.hasUnsyncedCorpusChanges ? (
+                  <CorpusSyncBanner syncState={controller.corpusSyncState} onDownload={controller.downloadCorpus} />
+                ) : null}
+
+                <div className="rounded-[28px] border border-white/8 bg-black/12 p-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted">Workspace</p>
+                      <p className="mt-1 text-sm text-muted">
+                        {controller.results.length} results from {controller.corpus.entries.length} articles.
+                      </p>
+                    </div>
+                    <FiltersBar filters={controller.filters} onChange={controller.updateFilters} />
+                  </div>
+                </div>
+
+                {dragging ? (
+                  <StatePanel centered>
+                    <div className="flex flex-col items-center gap-3">
+                      <Upload className="text-teal" size={20} />
+                      <div>
+                        <p className="font-medium text-soft-linen">Drop corpus.json to replace the current workspace</p>
+                        <p className="mt-1 text-muted">Schema is validated locally before the in-browser index is rebuilt.</p>
+                      </div>
+                    </div>
+                  </StatePanel>
+                ) : null}
+
+                {!dragging && controller.corpus.entries.length === 0 ? (
+                  <StatePanel centered>
+                    <div className="flex flex-col items-center gap-3">
+                      <AppWindow size={20} className="text-teal" />
+                      <div>
+                        <p className="font-medium text-soft-linen">No articles loaded</p>
+                        <p className="mt-1 text-muted">Load a corpus or create the first article directly in the browser.</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={() => fileInputRef.current?.click()}>Load corpus</Button>
+                        <Button variant="solid" onClick={controller.openNewArticle}>
+                          New article
+                        </Button>
+                      </div>
+                    </div>
+                  </StatePanel>
+                ) : (
+                  <ResultList
+                    results={controller.results}
+                    selectedEntryId={hoveredEntryId ?? controller.selectedEntryId}
+                    onOpenArticle={openResultArticle}
+                    onHoverArticle={setHoveredEntryId}
+                    onTogglePinned={controller.togglePinned}
+                  />
+                )}
+              </>
             )}
           </section>
         </WorkspaceLayout>
