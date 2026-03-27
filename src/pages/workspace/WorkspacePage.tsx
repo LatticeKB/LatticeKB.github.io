@@ -201,6 +201,7 @@ export function WorkspacePage() {
         <EditorModal
           key={`${controller.editorSession.mode}-${controller.editorSession.entry?.id ?? 'none'}-${controller.editorSession.open ? 'open' : 'closed'}`}
           session={controller.editorSession}
+          corpusEntries={controller.corpus.entries}
           onClose={controller.closeEditor}
           onSave={controller.saveEntry}
           onDelete={controller.deleteEntry}

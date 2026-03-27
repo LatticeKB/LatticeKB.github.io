@@ -12,6 +12,7 @@ import { clearDraft, readDraft, saveDraft } from '../../features/persistence/lib
 
 type Props = {
   session: EditorSession;
+  corpusEntries: CorpusEntry[];
   onClose: () => void;
   onSave: (entry: CorpusEntry) => void;
   onDelete: (entryId: string) => void;
@@ -19,7 +20,7 @@ type Props = {
   categoryOptions: string[];
 };
 
-export function EditorModal({ session, onClose, onSave, onDelete, productOptions, categoryOptions }: Props) {
+export function EditorModal({ session, corpusEntries, onClose, onSave, onDelete, productOptions, categoryOptions }: Props) {
   const [draft, setDraft] = useState<CorpusEntry | null>(() => session.entry);
   const [aliasesText, setAliasesText] = useState(() => session.entry?.aliases.join(', ') ?? '');
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -70,8 +71,8 @@ export function EditorModal({ session, onClose, onSave, onDelete, productOptions
       return [];
     }
 
-    return suggestTags(draft);
-  }, [draft]);
+    return suggestTags(draft, corpusEntries);
+  }, [corpusEntries, draft]);
 
   if (!session.open || !draft) {
     return null;
