@@ -1,24 +1,37 @@
-import type { CorpusEntry } from '../../corpus/model/types';
 import { truncateText } from '../../../shared/lib/strings';
 import type { SearchFilters, SearchHit } from '../model/searchTypes';
-import { filterHits, rankFallbackHits } from './ranking';
 import type { CorpusIndex } from './buildIndex';
-import { extractSearchableEntry } from './extractSearchText';
 
-function buildFallbackHits(entries: CorpusEntry[]): SearchHit[] {
-  return entries.map((entry) => ({
-    entry,
-    score: entry.pinned ? 1 : 0,
-    matchText: truncateText(entry.summary || extractSearchableEntry(entry).bodyText, 180),
-  }));
+const RECENT_WINDOW_DAYS = 30;
+
+function isRecent(updatedAt: string) {
+  const updated = new Date(updatedAt).getTime();
+  return Date.now() - updated < RECENT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+}
+
+function filterHits(hits: SearchHit[], filters: SearchFilters, imageEntryIds: Set<string>) {
+  return hits.filter(({ entry }) => {
+    if (filters.pinnedOnly && !entry.pinned) {
+      return false;
+    }
+
+    if (filters.recentOnly && !isRecent(entry.updatedAt)) {
+      return false;
+    }
+
+    if (filters.hasImages && !imageEntryIds.has(entry.id)) {
+      return false;
+    }
+
+    return true;
+  });
 }
 
 export function queryIndex(index: CorpusIndex, query: string, filters: SearchFilters) {
   const normalizedQuery = query.trim();
-  const allEntries = Array.from(index.entryMap.values());
 
   if (!normalizedQuery) {
-    return filterHits(rankFallbackHits(buildFallbackHits(allEntries)), filters);
+    return filterHits(index.fallbackHits, filters, index.imageEntryIds);
   }
 
   const matches = index.miniSearch.search(normalizedQuery, {
@@ -38,18 +51,18 @@ export function queryIndex(index: CorpusIndex, query: string, filters: SearchFil
   const hits = matches
     .map((match) => {
       const entry = index.entryMap.get(match.id);
-      if (!entry) {
+      const searchDoc = index.searchDocMap.get(match.id);
+      if (!entry || !searchDoc) {
         return null;
       }
 
-      const bodyText = extractSearchableEntry(entry).bodyText;
       return {
         entry,
         score: match.score,
-        matchText: truncateText(entry.summary || bodyText, 180),
+        matchText: truncateText(entry.summary || searchDoc.bodyText, 180),
       } satisfies SearchHit;
     })
     .filter((value): value is SearchHit => value !== null);
 
-  return filterHits(hits, filters);
+  return filterHits(hits, filters, index.imageEntryIds);
 }

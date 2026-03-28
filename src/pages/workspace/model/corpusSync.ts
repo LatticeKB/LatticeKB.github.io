@@ -23,8 +23,8 @@ export function createCorpusSyncState(corpus: CorpusFile, baselineName: string, 
   };
 }
 
-export function hasPendingCorpusChanges(syncState: CorpusSyncState, corpus: CorpusFile) {
-  return syncState.baselineSnapshot !== exportCorpus(corpus);
+export function hasPendingCorpusChanges(syncState: CorpusSyncState, currentSnapshot: string) {
+  return syncState.baselineSnapshot !== currentSnapshot;
 }
 
 export function describeCorpusSyncWarning(syncState: CorpusSyncState): CorpusSyncCopy {
