@@ -27,7 +27,7 @@ const defaultFilters: SearchFilters = {
 };
 
 const WORKSPACE_SAVE_DEBOUNCE_MS = 400;
-
+const SEARCH_EXECUTION_DEBOUNCE_MS = 120;
 export type EditorSession =
   | { open: false; mode: 'closed'; entry: null }
   | { open: true; mode: 'create' | 'edit'; entry: CorpusEntry };
@@ -111,6 +111,7 @@ export function useWorkspaceController() {
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [workspace, setWorkspace] = useState<PersistedWorkspaceState>(initialWorkspace);
   const [query, setQuery] = useState('');
+  const [executedQuery, setExecutedQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
   const [editorSession, setEditorSession] = useState<EditorSession>({ open: false, mode: 'closed', entry: null });
   const [viewerSession, setViewerSession] = useState<ViewerSession>({ open: false, entry: null });
@@ -244,7 +245,25 @@ export function useWorkspaceController() {
     return () => window.clearTimeout(handle);
   }, [workspace, workspaceReady]);
 
-  const results = useMemo(() => queryIndex(searchIndexRef.current, query, filters), [filters, query, searchRevision, workspace]);
+  useEffect(() => {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      setExecutedQuery('');
+      return;
+    }
+
+    const handle = window.setTimeout(() => {
+      logInfo('workspace.search.executed', {
+        queryLength: query.length,
+        debounceMs: SEARCH_EXECUTION_DEBOUNCE_MS,
+      });
+      setExecutedQuery(query);
+    }, SEARCH_EXECUTION_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(handle);
+  }, [query]);
+
+  const results = useMemo(() => queryIndex(searchIndexRef.current, executedQuery, filters), [executedQuery, filters, searchRevision, workspace]);
   const selectedEntry = useMemo(() => {
     if (!workspace.selectedEntryId) {
       return results[0]?.entry ?? entries[0] ?? null;
@@ -267,6 +286,12 @@ export function useWorkspaceController() {
       queryLength: nextQuery.length,
       hasQuery: nextQuery.trim().length > 0,
     });
+    if (!nextQuery.trim()) {
+      logInfo('workspace.search.executed', {
+        queryLength: 0,
+        debounceMs: 0,
+      });
+    }
     setQuery(nextQuery);
   }
 
