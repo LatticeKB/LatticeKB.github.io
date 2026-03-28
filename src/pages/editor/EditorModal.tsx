@@ -8,6 +8,7 @@ import { deserializeBodyToBlocks } from '../../features/editor/lib/blockDeserial
 import { serializeBlocksToBody } from '../../features/editor/lib/blockSerialization';
 import { normalizeTags } from '../../features/tags/lib/normalizeTags';
 import { suggestTags } from '../../features/tags/lib/suggestTags';
+import { logAction, logError, logInfo } from '../../shared/lib/clientLogger';
 import { clearDraft, readDraft, saveDraft } from '../../features/persistence/lib/draftStore';
 
 type Props = {
@@ -34,11 +35,20 @@ export function EditorModal({ session, corpusEntries, onClose, onSave, onDelete,
     void readDraft(session.entry.id)
       .then((savedDraft) => {
         if (!cancelled && savedDraft) {
+          logInfo('editor.draft.restore_completed', {
+            entryId: savedDraft.id,
+            mode: session.mode,
+          });
           setDraft(savedDraft);
           setAliasesText(savedDraft.aliases.join(', '));
         }
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        logError('editor.draft.restore_failed', error, {
+          entryId: session.entry.id,
+          mode: session.mode,
+        });
+      });
 
     return () => {
       cancelled = true;
@@ -60,7 +70,19 @@ export function EditorModal({ session, corpusEntries, onClose, onSave, onDelete,
     }
 
     const handle = window.setTimeout(() => {
-      void saveDraft(draft).catch(() => undefined);
+      void saveDraft(draft)
+        .then(() => {
+          logInfo('editor.draft.autosaved', {
+            entryId: draft.id,
+            mode: session.mode,
+          });
+        })
+        .catch((error) => {
+          logError('editor.draft.autosave_failed', error, {
+            entryId: draft.id,
+            mode: session.mode,
+          });
+        });
     }, 700);
 
     return () => window.clearTimeout(handle);
@@ -96,10 +118,18 @@ export function EditorModal({ session, corpusEntries, onClose, onSave, onDelete,
   }
 
   function addTag(tag: string) {
+    logAction('editor.tag.added', {
+      entryId: currentDraft.id,
+      tag,
+    });
     patch({ tags: normalizeTags([...currentDraft.tags, tag]) });
   }
 
   function removeTag(tag: string) {
+    logAction('editor.tag.removed', {
+      entryId: currentDraft.id,
+      tag,
+    });
     patch({ tags: currentDraft.tags.filter((existing) => existing !== tag) });
   }
 
@@ -118,7 +148,17 @@ export function EditorModal({ session, corpusEntries, onClose, onSave, onDelete,
       updatedAt: new Date().toISOString(),
     };
 
-    void clearDraft(finalized.id).catch(() => undefined);
+    logAction('editor.article.saved', {
+      entryId: finalized.id,
+      mode: session.mode,
+      tagCount: finalized.tags.length,
+      aliasCount: finalized.aliases.length,
+    });
+    void clearDraft(finalized.id).catch((error) => {
+      logError('editor.draft.clear_failed', error, {
+        entryId: finalized.id,
+      });
+    });
     onSave(finalized);
   }
 
@@ -128,11 +168,21 @@ export function EditorModal({ session, corpusEntries, onClose, onSave, onDelete,
     }
 
     if (!confirmDelete) {
+      logAction('editor.article.delete_confirmation_requested', {
+        entryId: currentDraft.id,
+      });
       setConfirmDelete(true);
       return;
     }
 
-    void clearDraft(currentDraft.id).catch(() => undefined);
+    logAction('editor.article.deleted', {
+      entryId: currentDraft.id,
+    });
+    void clearDraft(currentDraft.id).catch((error) => {
+      logError('editor.draft.clear_failed', error, {
+        entryId: currentDraft.id,
+      });
+    });
     setConfirmDelete(false);
     onDelete(currentDraft.id);
   }

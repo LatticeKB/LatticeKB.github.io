@@ -2,6 +2,7 @@ import { Check, Share2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { buildShareArticleUrl } from '../../../features/corpus/lib/openArticleInNewTab';
 import type { CorpusEntry } from '../../../features/corpus/model/types';
+import { logAction, logError } from '../../../shared/lib/clientLogger';
 import { Button } from '../../../shared/ui/Button';
 
 type Props = {
@@ -24,11 +25,23 @@ export function ShareArticleButton({ entry }: Props) {
   }, [copied]);
 
   async function handleShare() {
+    logAction('workspace.article.share_requested', {
+      entryId: entry.id,
+      title: entry.title,
+    });
     try {
       await navigator.clipboard.writeText(buildShareArticleUrl(entry));
+      logAction('workspace.article.share_copied', {
+        entryId: entry.id,
+        title: entry.title,
+      });
       setErrorMessage(null);
       setCopied(true);
     } catch (error) {
+      logError('workspace.article.share_failed', error, {
+        entryId: entry.id,
+        title: entry.title,
+      });
       setCopied(false);
       setErrorMessage(error instanceof Error ? error.message : 'Unable to copy share link.');
     }

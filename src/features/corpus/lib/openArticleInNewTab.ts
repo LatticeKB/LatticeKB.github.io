@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logAction, logWarning } from '../../../shared/lib/clientLogger';
 import { corpusEntrySchema } from '../model/schema';
 import type { CorpusEntry } from '../model/types';
 
@@ -77,6 +78,12 @@ function buildPreviewUrl(queryParam: string, value: string) {
 export function buildShareArticleUrl(entry: CorpusEntry) {
   const shareUrl = buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(entry));
   if (shareUrl.length > MAX_SHARE_URL_LENGTH) {
+    logWarning('workspace.article.share_link_too_long', {
+      entryId: entry.id,
+      title: entry.title,
+      urlLength: shareUrl.length,
+      maxLength: MAX_SHARE_URL_LENGTH,
+    });
     throw new Error('Share link is too long for reliable browser support. Remove large embedded media before sharing this article.');
   }
 
@@ -140,6 +147,12 @@ export function openArticleInNewTab(entry: CorpusEntry) {
       entry,
     }),
   );
+
+  logAction('workspace.article.open_in_new_tab', {
+    entryId: entry.id,
+    title: entry.title,
+    storageKey,
+  });
 
   window.open(buildPreviewUrl(ARTICLE_PREVIEW_QUERY_PARAM, storageKey), '_blank', 'noopener,noreferrer');
 }

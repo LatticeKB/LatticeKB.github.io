@@ -3,6 +3,7 @@ import { validateCorpus } from '../../corpus/lib/validators';
 import type { CorpusEntry, CorpusFile, CorpusOwner } from '../../corpus/model/types';
 import { extractSearchableEntry } from '../../search/lib/extractSearchText';
 import type { SearchableEntry } from '../../search/model/searchTypes';
+import { logAction, logInfo } from '../../../shared/lib/clientLogger';
 import type { CorpusSyncState } from '../../../pages/workspace/model/corpusSync';
 import {
   openLatticeDatabase,
@@ -142,7 +143,13 @@ async function replaceWorkspaceState(next: PersistedWorkspaceState) {
       searchStore.put(searchDoc, entryId);
     });
 
-    transaction.oncomplete = () => resolve();
+    transaction.oncomplete = () => {
+      logInfo('workspace.persistence.replace_completed', {
+        corpusName: next.corpusName,
+        entryCount: next.entryIds.length,
+      });
+      resolve();
+    };
     transaction.onerror = () => reject(new Error('Unable to save active workspace.'));
   });
 }
@@ -187,13 +194,27 @@ async function patchWorkspaceState(previous: PersistedWorkspaceState, next: Pers
       searchStore.put(searchDoc, entryId);
     });
 
-    transaction.oncomplete = () => resolve();
+    transaction.oncomplete = () => {
+      logInfo('workspace.persistence.patch_completed', {
+        corpusName: next.corpusName,
+        changedEntryCount: changedEntryIds.length,
+        removedEntryCount: removedEntryIds.length,
+      });
+      resolve();
+    };
     transaction.onerror = () => reject(new Error('Unable to save active workspace.'));
   });
 }
 
 export async function saveWorkspaceState(previous: PersistedWorkspaceState | null, next: PersistedWorkspaceState) {
-  if (previous === null || shouldReplaceWorkspace(previous, next)) {
+  const replacingWorkspace = previous === null || shouldReplaceWorkspace(previous, next);
+  logInfo('workspace.persistence.save_started', {
+    corpusName: next.corpusName,
+    entryCount: next.entryIds.length,
+    mode: replacingWorkspace ? 'replace' : 'patch',
+  });
+
+  if (replacingWorkspace) {
     return replaceWorkspaceState(next);
   }
 
@@ -202,6 +223,7 @@ export async function saveWorkspaceState(previous: PersistedWorkspaceState | nul
 
 export async function readWorkspaceState() {
   const database = await openLatticeDatabase();
+  logInfo('workspace.persistence.restore_started');
   return new Promise<PersistedWorkspaceState | null>((resolve, reject) => {
     const transaction = database.transaction(
       [WORKSPACE_META_STORE_NAME, WORKSPACE_ENTRY_STORE_NAME, WORKSPACE_SEARCH_STORE_NAME],
@@ -211,6 +233,7 @@ export async function readWorkspaceState() {
 
     metaRequest.onsuccess = () => {
       if (!isWorkspaceMeta(metaRequest.result)) {
+        logInfo('workspace.persistence.restore_empty');
         resolve(null);
         return;
       }
@@ -238,6 +261,11 @@ export async function readWorkspaceState() {
             }),
           );
 
+          logAction('workspace.persistence.restore_completed', {
+            corpusName: meta.corpusName,
+            entryCount: corpus.entries.length,
+            selectedEntryId: meta.selectedEntryId,
+          });
           resolve({
             owner: corpus.owner,
             entryIds: corpus.entries.map((entry) => entry.id),

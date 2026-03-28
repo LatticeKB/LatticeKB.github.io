@@ -16,6 +16,7 @@ import {
   type PersistedWorkspaceState,
 } from '../../features/persistence/lib/workspaceStore';
 import { extractSearchableEntry } from '../../features/search/lib/extractSearchText';
+import { logAction, logError, logInfo, logWarning } from '../../shared/lib/clientLogger';
 import { createId } from '../../shared/lib/ids';
 import { createCorpusSyncState, hasPendingCorpusChanges } from './model/corpusSync';
 
@@ -149,12 +150,17 @@ export function useWorkspaceController() {
             storedWorkspace.searchDocsById,
           );
           setLastCorpusName(storedWorkspace.corpusName);
+          logAction('workspace.restore_applied', {
+            corpusName: storedWorkspace.corpusName,
+            entryCount: storedWorkspace.entryIds.length,
+          });
         }
 
         setWorkspaceReady(true);
       })
       .catch((error) => {
         if (!isCancelled) {
+          logError('workspace.restore_failed', error);
           setErrorMessage(error instanceof Error ? error.message : 'Unable to restore local workspace.');
           setWorkspaceReady(true);
         }
@@ -185,8 +191,17 @@ export function useWorkspaceController() {
       || removedEntryIds.length + changedEntryIds.length > Math.max(25, workspace.entryIds.length / 3);
 
     if (shouldRebuild) {
+      logInfo('workspace.search.rebuild_index', {
+        entryCount: workspace.entryIds.length,
+      });
       searchIndexRef.current = buildIndex(entries, workspace.searchDocsById);
     } else {
+      if (removedEntryIds.length > 0 || changedEntryIds.length > 0) {
+        logInfo('workspace.search.incremental_index_update', {
+          changedEntryCount: changedEntryIds.length,
+          removedEntryCount: removedEntryIds.length,
+        });
+      }
       removedEntryIds.forEach((entryId) => removeIndexEntry(searchIndexRef.current, entryId));
       changedEntryIds.forEach((entryId) => {
         const entry = workspace.entriesById[entryId];
@@ -211,9 +226,17 @@ export function useWorkspaceController() {
       setLastCorpusName(workspace.corpusName);
       void saveWorkspaceState(persistedWorkspaceRef.current, workspace)
         .then(() => {
+          logInfo('workspace.persistence.save_completed', {
+            corpusName: workspace.corpusName,
+            entryCount: workspace.entryIds.length,
+          });
           persistedWorkspaceRef.current = workspace;
         })
         .catch((error) => {
+          logError('workspace.persistence.save_failed', error, {
+            corpusName: workspace.corpusName,
+            entryCount: workspace.entryIds.length,
+          });
           setErrorMessage(error instanceof Error ? error.message : 'Unable to save active workspace.');
         });
     }, WORKSPACE_SAVE_DEBOUNCE_MS);
@@ -235,14 +258,22 @@ export function useWorkspaceController() {
   );
 
   function updateFilters(next: Partial<SearchFilters>) {
+    logAction('workspace.filters.updated', next);
     setFilters((current) => ({ ...current, ...next }));
   }
 
   function setSearchQuery(nextQuery: string) {
+    logAction('workspace.search.query_changed', {
+      queryLength: nextQuery.length,
+      hasQuery: nextQuery.trim().length > 0,
+    });
     setQuery(nextQuery);
   }
 
   function setSelectedEntryId(nextSelectedEntryId: string | null) {
+    logAction('workspace.selection.changed', {
+      entryId: nextSelectedEntryId,
+    });
     setWorkspace((current) => (
       current.selectedEntryId === nextSelectedEntryId
         ? current
@@ -251,25 +282,41 @@ export function useWorkspaceController() {
   }
 
   function openNewArticle() {
+    logAction('workspace.article.new_opened');
     setViewerSession({ open: false, entry: null });
     setEditorSession({ open: true, mode: 'create', entry: createEmptyEntry() });
   }
 
   function openArticle(entry: CorpusEntry) {
+    logAction('workspace.article.opened', {
+      entryId: entry.id,
+      title: entry.title,
+    });
     setSelectedEntryId(entry.id);
     setViewerSession({ open: true, entry });
   }
 
   function openEditArticle(entry: CorpusEntry) {
+    logAction('workspace.article.edit_opened', {
+      entryId: entry.id,
+      title: entry.title,
+    });
     setViewerSession({ open: false, entry: null });
     setEditorSession({ open: true, mode: 'edit', entry });
   }
 
   function closeViewer() {
+    logAction('workspace.article.viewer_closed', {
+      entryId: viewerSession.entry?.id ?? null,
+    });
     setViewerSession({ open: false, entry: null });
   }
 
   function closeEditor() {
+    logAction('workspace.article.editor_closed', {
+      entryId: editorSession.entry?.id ?? null,
+      mode: editorSession.mode,
+    });
     setEditorSession({ open: false, mode: 'closed', entry: null });
   }
 
@@ -292,45 +339,56 @@ export function useWorkspaceController() {
     });
 
     if (!didDelete) {
+      logWarning('workspace.article.delete_missing', { entryId });
       return;
     }
 
+    logAction('workspace.article.deleted', {
+      entryId,
+      nextSelectedEntryId,
+    });
     setViewerSession((current) => (current.entry?.id === entryId ? { open: false, entry: null } : current));
     setEditorSession((current) => (current.entry?.id === entryId ? { open: false, mode: 'closed', entry: null } : current));
   }
 
   function togglePinned(entryId: string) {
-    let updatedEntry: CorpusEntry | null = null;
-
-    setWorkspace((current) => {
-      const existingEntry = current.entriesById[entryId];
-      if (!existingEntry) {
-        return current;
-      }
-
-      updatedEntry = {
-        ...existingEntry,
-        pinned: !existingEntry.pinned,
-        updatedAt: new Date().toISOString(),
-      };
-
-      return upsertWorkspaceEntry(current, updatedEntry);
-    });
-
-    if (!updatedEntry) {
+    const currentEntry = workspace.entriesById[entryId];
+    if (!currentEntry) {
+      logWarning('workspace.article.pin_toggle_missing', { entryId });
       return;
     }
 
+    const nextUpdatedEntry: CorpusEntry = {
+      ...currentEntry,
+      pinned: !currentEntry.pinned,
+      updatedAt: new Date().toISOString(),
+    };
+
+    setWorkspace((current) => (
+      current.entriesById[entryId]
+        ? upsertWorkspaceEntry(current, nextUpdatedEntry)
+        : current
+    ));
+
+    logAction('workspace.article.pin_toggled', {
+      entryId,
+      pinned: nextUpdatedEntry.pinned,
+    });
     if (viewerSession.open && viewerSession.entry?.id === entryId) {
-      setViewerSession({ open: true, entry: updatedEntry });
+      setViewerSession({ open: true, entry: nextUpdatedEntry });
     }
 
     if (editorSession.open && editorSession.entry?.id === entryId) {
-      setEditorSession({ ...editorSession, entry: updatedEntry });
+      setEditorSession({ ...editorSession, entry: nextUpdatedEntry });
     }
   }
 
   function saveEntry(nextEntry: CorpusEntry) {
+    logAction('workspace.article.saved', {
+      entryId: nextEntry.id,
+      title: nextEntry.title,
+      isNew: !workspace.entriesById[nextEntry.id],
+    });
     setWorkspace((current) => upsertWorkspaceEntry(current, nextEntry, {
       prependIfNew: !current.entriesById[nextEntry.id],
       selectedEntryId: nextEntry.id,
@@ -340,6 +398,10 @@ export function useWorkspaceController() {
   }
 
   async function loadCorpusFromFile(file: File) {
+    logAction('workspace.corpus.load_started', {
+      fileName: file.name,
+      fileSize: file.size,
+    });
     try {
       const imported = await importCorpus(file);
       const importedWorkspace = createWorkspaceState({
@@ -348,18 +410,31 @@ export function useWorkspaceController() {
         selectedEntryId: imported.corpus.entries[0]?.id ?? null,
         corpusSyncState: createCorpusSyncState(imported.corpus, imported.filename, 'file'),
       });
+      logAction('workspace.corpus.load_completed', {
+        fileName: imported.filename,
+        entryCount: imported.corpus.entries.length,
+      });
       setWorkspace(importedWorkspace);
       setLastCorpusName(importedWorkspace.corpusName);
       setViewerSession({ open: false, entry: null });
       setEditorSession({ open: false, mode: 'closed', entry: null });
       setErrorMessage(null);
     } catch (error) {
+      logError('workspace.corpus.load_failed', error, {
+        fileName: file.name,
+        fileSize: file.size,
+      });
       setErrorMessage(error instanceof Error ? error.message : 'Unable to import corpus.');
     }
   }
 
   function downloadCorpus() {
     const safeName = workspace.corpusName.endsWith('.json') ? workspace.corpusName : 'corpus.json';
+    logAction('workspace.corpus.downloaded', {
+      fileName: safeName,
+      entryCount: workspace.entryIds.length,
+      snapshotLength: currentSnapshot.length,
+    });
     downloadTextFile(safeName, currentSnapshot);
     setWorkspace((current) => ({
       ...current,

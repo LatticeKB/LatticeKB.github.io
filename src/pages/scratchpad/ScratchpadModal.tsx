@@ -3,6 +3,7 @@ import { Eraser, Save } from 'lucide-react';
 import { Modal } from '../../shared/ui/Modal';
 import { Button } from '../../shared/ui/Button';
 import { formatAbsoluteDate } from '../../shared/lib/dates';
+import { logAction, logError, logInfo } from '../../shared/lib/clientLogger';
 import { readScratchpad, saveScratchpad, clearScratchpad } from '../../features/persistence/lib/scratchpadStore';
 import { BlockEditorWrapper } from '../editor/components/BlockEditorWrapper';
 
@@ -25,9 +26,16 @@ export function ScratchpadModal({ open, onClose }: Props) {
     const handle = window.setTimeout(() => {
       try {
         const nextUpdatedAt = saveScratchpad(blocks);
+        logInfo('scratchpad.autosaved', {
+          blockCount: blocks.length,
+          updatedAt: nextUpdatedAt,
+        });
         setUpdatedAt(nextUpdatedAt);
         setSaveError(null);
-      } catch {
+      } catch (error) {
+        logError('scratchpad.autosave_failed', error, {
+          blockCount: blocks.length,
+        });
         setSaveError('Unable to autosave scratchpad to this browser.');
       }
     }, 450);
@@ -57,21 +65,33 @@ export function ScratchpadModal({ open, onClose }: Props) {
   }, [saveError, updatedAt]);
 
   function handleSaveNow() {
+    logAction('scratchpad.save_requested', {
+      blockCount: blocks.length,
+    });
     try {
       const nextUpdatedAt = saveScratchpad(blocks);
+      logInfo('scratchpad.save_completed', {
+        blockCount: blocks.length,
+        updatedAt: nextUpdatedAt,
+      });
       setUpdatedAt(nextUpdatedAt);
       setSaveError(null);
-    } catch {
+    } catch (error) {
+      logError('scratchpad.save_failed', error, {
+        blockCount: blocks.length,
+      });
       setSaveError('Unable to save scratchpad to this browser.');
     }
   }
 
   function handleClear() {
     if (!confirmClear) {
+      logAction('scratchpad.clear_confirmation_requested');
       setConfirmClear(true);
       return;
     }
 
+    logAction('scratchpad.cleared');
     clearScratchpad();
     setBlocks([]);
     setUpdatedAt('');

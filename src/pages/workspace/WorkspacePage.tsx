@@ -3,6 +3,7 @@ import { AppWindow, Upload } from 'lucide-react';
 import { TopBar } from '../../app/layout/TopBar';
 import { WorkspaceLayout } from '../../app/layout/WorkspaceLayout';
 import { openArticleInNewTab } from '../../features/corpus/lib/openArticleInNewTab';
+import { logAction } from '../../shared/lib/clientLogger';
 import { StatePanel } from '../../shared/ui/StatePanel';
 import { Button } from '../../shared/ui/Button';
 import { FiltersBar } from './components/FiltersBar';
@@ -45,6 +46,10 @@ export function WorkspacePage() {
       return;
     }
 
+    logAction('workspace.corpus.file_selected', {
+      fileName: file.name,
+      fileSize: file.size,
+    });
     await controller.loadCorpusFromFile(file);
   }
 
@@ -61,8 +66,14 @@ export function WorkspacePage() {
     <div className="pb-8">
       <TopBar
         corpusName={controller.corpusName}
-        onLoadCorpus={() => fileInputRef.current?.click()}
-        onOpenScratchpad={() => setScratchpadOpen(true)}
+        onLoadCorpus={() => {
+          logAction('workspace.topbar.load_clicked');
+          fileInputRef.current?.click();
+        }}
+        onOpenScratchpad={() => {
+          logAction('workspace.scratchpad.opened');
+          setScratchpadOpen(true);
+        }}
         onNewArticle={controller.openNewArticle}
         onDownloadJson={controller.downloadCorpus}
       />
@@ -77,6 +88,9 @@ export function WorkspacePage() {
       <div
         onDragOver={(event) => {
           event.preventDefault();
+          if (!dragging) {
+            logAction('workspace.corpus.drag_started');
+          }
           setDragging(true);
         }}
         onDragLeave={(event) => {
@@ -86,6 +100,9 @@ export function WorkspacePage() {
         onDrop={(event) => {
           event.preventDefault();
           setDragging(false);
+          logAction('workspace.corpus.file_dropped', {
+            fileCount: event.dataTransfer.files.length,
+          });
           void handleFileSelection(event.dataTransfer.files);
         }}
       >
@@ -151,7 +168,10 @@ export function WorkspacePage() {
                         <p className="mt-1 text-muted">Load a corpus or create the first article directly in the browser.</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button onClick={() => fileInputRef.current?.click()}>Load corpus</Button>
+                        <Button onClick={() => {
+                          logAction('workspace.empty_state.load_clicked');
+                          fileInputRef.current?.click();
+                        }}>Load corpus</Button>
                         <Button variant="solid" onClick={controller.openNewArticle}>
                           New article
                         </Button>
@@ -197,7 +217,14 @@ export function WorkspacePage() {
       />
 
       <Suspense fallback={null}>
-        <ScratchpadModal key={scratchpadOpen ? 'open' : 'closed'} open={scratchpadOpen} onClose={() => setScratchpadOpen(false)} />
+        <ScratchpadModal
+          key={scratchpadOpen ? 'open' : 'closed'}
+          open={scratchpadOpen}
+          onClose={() => {
+            logAction('workspace.scratchpad.closed');
+            setScratchpadOpen(false);
+          }}
+        />
         <EditorModal
           key={`${controller.editorSession.mode}-${controller.editorSession.entry?.id ?? 'none'}-${controller.editorSession.open ? 'open' : 'closed'}`}
           session={controller.editorSession}
