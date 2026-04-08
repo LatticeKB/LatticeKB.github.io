@@ -29,7 +29,7 @@ function ReadonlyArticleDocument({ blocks }: ReadonlyArticleDocumentProps) {
   );
 
   return (
-    <div className="rounded-[26px] border border-white/8 bg-panel/90 p-4 sm:p-5">
+    <div className="article-body rounded-[26px] border border-white/8 bg-panel/90 p-4 sm:p-5">
       <BlockNoteView
         editor={editor as BlockNoteEditor}
         editable={false}
