@@ -453,8 +453,26 @@ export function useWorkspaceController() {
     }
   }
 
+  function renameCorpus(nextName: string) {
+    const trimmedName = nextName.trim();
+    if (!trimmedName || trimmedName === workspace.corpusName) {
+      return;
+    }
+
+    logAction('workspace.corpus.renamed', {
+      previousName: workspace.corpusName,
+      nextName: trimmedName,
+    });
+    setLastCorpusName(trimmedName);
+    setWorkspace((current) => ({
+      ...current,
+      corpusName: trimmedName,
+    }));
+    setErrorMessage(null);
+  }
+
   function downloadCorpus() {
-    const safeName = workspace.corpusName.endsWith('.json') ? workspace.corpusName : 'corpus.json';
+    const safeName = workspace.corpusName.endsWith('.json') ? workspace.corpusName : `${workspace.corpusName}.json`;
     logAction('workspace.corpus.downloaded', {
       fileName: safeName,
       entryCount: workspace.entryIds.length,
@@ -475,6 +493,7 @@ export function useWorkspaceController() {
     workspaceReady,
     corpus,
     corpusName: workspace.corpusName,
+    renameCorpus,
     query,
     setQuery: setSearchQuery,
     filters,

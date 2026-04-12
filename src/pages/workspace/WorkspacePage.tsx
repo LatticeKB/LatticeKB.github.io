@@ -66,6 +66,7 @@ export function WorkspacePage() {
     <div className="pb-8">
       <TopBar
         corpusName={controller.corpusName}
+        onRenameCorpus={controller.renameCorpus}
         onLoadCorpus={() => {
           logAction('workspace.topbar.load_clicked');
           fileInputRef.current?.click();
