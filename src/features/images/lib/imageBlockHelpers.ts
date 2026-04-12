@@ -40,3 +40,40 @@ export function extractImageMetadata(blocks: unknown[]) {
 export function hasImageBlocks(blocks: unknown[]) {
   return extractImageMetadata(blocks).length > 0;
 }
+
+type StripImageBlocksResult<T> = {
+  blocks: T[];
+  removedCount: number;
+};
+
+export function removeImageBlocks<T extends MaybeRecord>(blocks: T[]): StripImageBlocksResult<T> {
+  const strippedBlocks: T[] = [];
+  let removedCount = 0;
+
+  for (const block of blocks) {
+    if (block.type === 'image') {
+      removedCount += 1;
+      continue;
+    }
+
+    let nextBlock = block;
+    const children = block.children;
+    if (Array.isArray(children)) {
+      const strippedChildren = removeImageBlocks(children.filter(isRecord));
+      removedCount += strippedChildren.removedCount;
+      if (strippedChildren.blocks !== children) {
+        nextBlock = {
+          ...block,
+          children: strippedChildren.blocks,
+        };
+      }
+    }
+
+    strippedBlocks.push(nextBlock);
+  }
+
+  return {
+    blocks: strippedBlocks,
+    removedCount,
+  };
+}

@@ -9,6 +9,7 @@ type Props = PropsWithChildren<{
   description?: string;
   onClose: () => void;
   className?: string;
+  size?: 'default' | 'compact';
 }>;
 
 const FOCUSABLE_SELECTOR = [
@@ -20,7 +21,7 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export function Modal({ open, title, description, onClose, className, children }: Props) {
+export function Modal({ open, title, description, onClose, className, size = 'default', children }: Props) {
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -93,7 +94,7 @@ export function Modal({ open, title, description, onClose, className, children }
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        className={`relative z-10 flex h-[min(94vh,1020px)] w-[min(96vw,1480px)] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#151216] shadow-panel ${className ?? ''}`}
+        className={`relative z-10 flex flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#151216] shadow-panel ${size === 'compact' ? 'max-h-[min(82vh,36rem)] w-[min(92vw,34rem)]' : 'h-[min(94vh,1020px)] w-[min(96vw,1480px)]'} ${className ?? ''}` }
       >
         <header className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 px-4 py-4 sm:px-6">
           <div>
@@ -110,7 +111,7 @@ export function Modal({ open, title, description, onClose, className, children }
             <X size={18} />
           </Button>
         </header>
-        <div className="min-h-0 flex-1">{children}</div>
+        <div className={size === 'compact' ? 'overflow-y-auto' : 'min-h-0 flex-1'}>{children}</div>
       </section>
     </div>,
     document.body,

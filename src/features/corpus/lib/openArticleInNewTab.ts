@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { logAction, logWarning } from '../../../shared/lib/clientLogger';
+import { removeImageBlocks } from '../../images/lib/imageBlockHelpers';
 import { corpusEntrySchema } from '../model/schema';
 import type { CorpusEntry } from '../model/types';
 
@@ -75,19 +76,80 @@ function buildPreviewUrl(queryParam: string, value: string) {
   return url.toString();
 }
 
-export function buildShareArticleUrl(entry: CorpusEntry) {
-  const shareUrl = buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(entry));
-  if (shareUrl.length > MAX_SHARE_URL_LENGTH) {
-    logWarning('workspace.article.share_link_too_long', {
-      entryId: entry.id,
-      title: entry.title,
-      urlLength: shareUrl.length,
-      maxLength: MAX_SHARE_URL_LENGTH,
-    });
-    throw new Error('Share link is too long for reliable browser support. Remove large embedded media before sharing this article.');
+export type ShareArticleLinkPlan =
+  | {
+      kind: 'ready';
+      url: string;
+      urlLength: number;
+    }
+  | {
+      kind: 'fallback';
+      fullUrlLength: number;
+      fallbackUrl: string;
+      fallbackUrlLength: number;
+      removedImageCount: number;
+    }
+  | {
+      kind: 'unavailable';
+      fullUrlLength: number;
+      fallbackUrlLength: number | null;
+      removedImageCount: number;
+    };
+
+function stripImagesForShare(entry: CorpusEntry) {
+  const strippedBody = removeImageBlocks(entry.body.blocks);
+  return {
+    entry: {
+      ...entry,
+      body: {
+        ...entry.body,
+        blocks: strippedBody.blocks,
+      },
+    },
+    removedImageCount: strippedBody.removedCount,
+  };
+}
+
+export function createShareArticleLinkPlan(entry: CorpusEntry): ShareArticleLinkPlan {
+  const fullUrl = buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(entry));
+  if (fullUrl.length <= MAX_SHARE_URL_LENGTH) {
+    return {
+      kind: 'ready',
+      url: fullUrl,
+      urlLength: fullUrl.length,
+    };
   }
 
-  return shareUrl;
+  const strippedShare = stripImagesForShare(entry);
+  const fallbackUrl = strippedShare.removedImageCount > 0
+    ? buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(strippedShare.entry))
+    : null;
+
+  logWarning('workspace.article.share_link_too_long', {
+    entryId: entry.id,
+    title: entry.title,
+    urlLength: fullUrl.length,
+    maxLength: MAX_SHARE_URL_LENGTH,
+    removedImageCount: strippedShare.removedImageCount,
+    fallbackUrlLength: fallbackUrl?.length ?? null,
+  });
+
+  if (fallbackUrl && fallbackUrl.length <= MAX_SHARE_URL_LENGTH) {
+    return {
+      kind: 'fallback',
+      fullUrlLength: fullUrl.length,
+      fallbackUrl,
+      fallbackUrlLength: fallbackUrl.length,
+      removedImageCount: strippedShare.removedImageCount,
+    };
+  }
+
+  return {
+    kind: 'unavailable',
+    fullUrlLength: fullUrl.length,
+    fallbackUrlLength: fallbackUrl?.length ?? null,
+    removedImageCount: strippedShare.removedImageCount,
+  };
 }
 
 export function getArticlePreviewStorageKey(locationSearch = window.location.search) {
