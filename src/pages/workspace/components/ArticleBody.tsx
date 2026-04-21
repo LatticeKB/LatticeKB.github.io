@@ -6,7 +6,7 @@ import { cn } from '../../../shared/lib/classes';
 type Props = {
   entry: CorpusEntry;
   editor: BlockNoteEditor;
-  appearance?: 'dark' | 'print';
+  appearance?: 'dark' | 'document';
   className?: string;
 };
 
@@ -21,14 +21,14 @@ export function ArticleBody({ entry, editor, appearance = 'dark', className }: P
         'article-body p-4 sm:p-5',
         appearance === 'dark'
           ? 'rounded-[26px] border border-white/8 bg-panel/90'
-          : 'article-body--print rounded-[28px] border border-slate-200 bg-white text-slate-900 shadow-[0_30px_80px_rgba(15,23,42,0.08)]',
+          : 'article-body--document article-body--document-shell rounded-[28px]',
         className,
       )}
     >
       <BlockNoteView
         editor={editor}
         editable={false}
-        theme={appearance === 'print' ? 'light' : 'dark'}
+        theme={appearance === 'document' ? 'light' : 'dark'}
         sideMenu={false}
         formattingToolbar={false}
         slashMenu={false}

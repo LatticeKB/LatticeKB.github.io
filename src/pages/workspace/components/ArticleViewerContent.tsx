@@ -1,16 +1,16 @@
 import type { ClipboardEvent as ReactClipboardEvent, ReactNode } from 'react';
 import { useRef, useState } from 'react';
-import { useCreateBlockNote } from '@blocknote/react';
 import { FileDown } from 'lucide-react';
+import { useCreateBlockNote } from '@blocknote/react';
 import type { CorpusEntry } from '../../../features/corpus/model/types';
-import { openArticlePrintPreview } from '../../../features/corpus/lib/openArticleInNewTab';
 import { hasImageBlocks } from '../../../features/images/lib/imageBlockHelpers';
 import { cn } from '../../../shared/lib/classes';
 import { formatAbsoluteDate } from '../../../shared/lib/dates';
-import { logAction } from '../../../shared/lib/clientLogger';
+import { logAction, logError } from '../../../shared/lib/clientLogger';
 import { Button } from '../../../shared/ui/Button';
 import { Modal } from '../../../shared/ui/Modal';
 import { ArticleBody } from './ArticleBody';
+import { ArticlePdfDocument } from './ArticlePdfDocument';
 
 type Props = {
   entry: CorpusEntry;
@@ -34,10 +34,22 @@ function selectionTouchesInlineImage(selection: Selection, container: HTMLElemen
   return false;
 }
 
+function createPdfFilename(title: string) {
+  const safeBaseName = title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'article';
+
+  return `${safeBaseName}.pdf`;
+}
+
 export function ArticleViewerContent({ entry, actions, className }: Props) {
   const [pdfPromptOpen, setPdfPromptOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const copyTargetRef = useRef<HTMLDivElement | null>(null);
+  const pdfExportRef = useRef<HTMLDivElement | null>(null);
   const hasInlineImages = hasImageBlocks(entry.body.blocks);
   const editor = useCreateBlockNote(
     {
@@ -48,6 +60,10 @@ export function ArticleViewerContent({ entry, actions, className }: Props) {
   );
 
   function closePdfPrompt() {
+    if (isGeneratingPdf) {
+      return;
+    }
+
     setPdfPromptOpen(false);
     setErrorMessage(null);
   }
@@ -71,15 +87,61 @@ export function ArticleViewerContent({ entry, actions, className }: Props) {
     });
   }
 
-  function handleSaveAsPdf() {
-    const printWindow = openArticlePrintPreview(entry);
-    if (printWindow) {
-      setPdfPromptOpen(false);
-      setErrorMessage(null);
+  async function handleDownloadPdf() {
+    if (!pdfExportRef.current) {
+      setErrorMessage('The article PDF layout is not ready yet. Please try again.');
       return;
     }
 
-    setErrorMessage('Allow pop-ups for this site so the print preview can open.');
+    setIsGeneratingPdf(true);
+    setErrorMessage(null);
+
+    try {
+      await document.fonts.ready;
+      const exportRoot = pdfExportRef.current;
+      const { default: html2pdf } = await import('html2pdf.js');
+      const pdfOptions = {
+        margin: [0.35, 0.35, 0.45, 0.35],
+        filename: createPdfFilename(entry.title),
+        image: { type: 'jpeg', quality: 0.98 },
+        enableLinks: true,
+        pagebreak: {
+          mode: ['css', 'legacy'],
+          avoid: ['.article-pdf-avoid-break', 'img', 'figure'],
+        },
+        html2canvas: {
+          scale: Math.min(window.devicePixelRatio || 1, 2),
+          useCORS: true,
+          backgroundColor: '#f8fafc',
+          windowWidth: exportRoot.scrollWidth,
+        },
+        jsPDF: {
+          unit: 'in',
+          format: 'letter',
+          orientation: 'portrait' as const,
+        },
+      };
+      const worker = (html2pdf as any)()
+        .set(pdfOptions)
+        .from(exportRoot);
+
+      await worker.save();
+
+      logAction('workspace.article.pdf_downloaded', {
+        entryId: entry.id,
+        title: entry.title,
+        includesImages: hasInlineImages,
+      });
+      setPdfPromptOpen(false);
+    } catch (error) {
+      logError('workspace.article.pdf_download_failed', error, {
+        entryId: entry.id,
+        title: entry.title,
+      });
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to generate the article PDF.');
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   }
 
   return (
@@ -110,29 +172,31 @@ export function ArticleViewerContent({ entry, actions, className }: Props) {
         </div>
       </div>
 
+      <ArticlePdfDocument ref={pdfExportRef} entry={entry} />
+
       <Modal
         open={pdfPromptOpen}
         onClose={closePdfPrompt}
-        title="Save article as PDF"
-        description="Embedded images do not survive cross-app copy reliably yet. Save a professionally formatted PDF instead."
+        title="Download article PDF"
+        description="Embedded images do not survive cross-app copy reliably yet. Download a PDF instead."
         size="compact"
       >
         <div className="space-y-5 px-4 py-5 sm:px-6">
           <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4 text-sm leading-6 text-muted">
             <p>
-              This appears only when your current selection includes embedded media from the read-only preview. The PDF view preserves the article title, body, and inline images more reliably than clipboard paste.
+              This appears only when your current selection includes embedded media from the read-only preview. The downloaded PDF preserves the article title, body, inline images, and clickable links.
             </p>
           </div>
 
           {errorMessage ? <p className="text-sm leading-6 text-rose-200">{errorMessage}</p> : null}
 
           <div className="flex flex-wrap justify-end gap-2 border-t border-white/8 pt-4">
-            <Button variant="ghost" onClick={closePdfPrompt}>
+            <Button variant="ghost" onClick={closePdfPrompt} disabled={isGeneratingPdf}>
               Cancel
             </Button>
-            <Button variant="solid" onClick={handleSaveAsPdf}>
+            <Button variant="solid" onClick={() => void handleDownloadPdf()} disabled={isGeneratingPdf}>
               <FileDown size={16} />
-              Save as PDF
+              {isGeneratingPdf ? 'Generating PDF…' : 'Download PDF'}
             </Button>
           </div>
         </div>

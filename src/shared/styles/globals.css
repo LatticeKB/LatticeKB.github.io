@@ -101,7 +101,6 @@ img {
   border-radius: 999px;
 }
 
-
 .bn-container[data-color-scheme='light'] {
   --bn-colors-editor-background: transparent;
   --bn-colors-editor-text: #0f172a;
@@ -117,67 +116,47 @@ img {
   --bn-font-family: var(--font-sans);
 }
 
-.article-body--print .bn-editor {
+.article-body--document-shell {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.08);
+}
+
+.article-body--document .bn-editor {
   color: #0f172a;
 }
 
-.article-body--print .bn-inline-content a,
-.article-body--print .bn-inline-content a:visited {
+.article-body--document .bn-inline-content a,
+.article-body--document .bn-inline-content a:visited {
   color: #0f766e;
   text-decoration-color: rgba(15, 118, 110, 0.4);
 }
 
-.article-body--print img {
+.article-body--document img {
   border-radius: 18px;
 }
 
-@media print {
-  :root {
-    color-scheme: light;
-    background: #ffffff;
-    color: #0f172a;
-  }
+.article-pdf-export-root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8.5in;
+  padding: 0.35in;
+  background: #f8fafc;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
 
-  html,
-  body,
-  #root {
-    min-height: auto;
-    background: #ffffff !important;
-    color: #0f172a !important;
-  }
+.article-pdf-document {
+  break-inside: avoid;
+}
 
-  body {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
+.article-pdf-document a {
+  word-break: break-word;
+}
 
-  .article-print-screen {
-    display: none !important;
-  }
-
-  .article-print-shell {
-    background: #ffffff !important;
-  }
-
-  .article-print-document {
-    max-width: none !important;
-    margin: 0 !important;
-  }
-
-  .article-body--print {
-    border: 0 !important;
-    box-shadow: none !important;
-    padding-inline: 0 !important;
-  }
-
-  .article-body--print .bn-container,
-  .article-body--print .bn-editor,
-  .article-body--print .bn-block-content {
-    background: transparent !important;
-  }
-
-  @page {
-    size: auto;
-    margin: 16mm 14mm;
-  }
+.article-pdf-avoid-break {
+  break-inside: avoid;
 }
