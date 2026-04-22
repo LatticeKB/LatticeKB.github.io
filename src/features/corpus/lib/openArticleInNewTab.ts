@@ -6,7 +6,6 @@ import type { CorpusEntry } from '../model/types';
 
 const ARTICLE_PREVIEW_QUERY_PARAM = 'articlePreview';
 const SHARED_ARTICLE_QUERY_PARAM = 'sharedArticle';
-const ARTICLE_PRINT_QUERY_PARAM = 'articlePrint';
 const ARTICLE_PREVIEW_STORAGE_PREFIX = 'latticekb:article-preview:';
 const ARTICLE_PREVIEW_TTL_MS = 1000 * 60 * 60 * 24;
 const MAX_SHARE_URL_LENGTH = 2083;
@@ -71,38 +70,10 @@ function pruneExpiredArticlePreviews(storage: Storage) {
   }
 }
 
-function buildArticleUrl(params: Record<string, string>) {
+function buildPreviewUrl(queryParam: string, value: string) {
   const url = new URL(window.location.pathname, window.location.origin);
-  for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
-  }
+  url.searchParams.set(queryParam, value);
   return url.toString();
-}
-
-function persistArticlePreview(entry: CorpusEntry) {
-  pruneExpiredArticlePreviews(localStorage);
-
-  const storageKey = `${ARTICLE_PREVIEW_STORAGE_PREFIX}${entry.id}:${entry.updatedAt}`;
-  localStorage.setItem(
-    storageKey,
-    JSON.stringify({
-      savedAt: new Date().toISOString(),
-      entry,
-    }),
-  );
-
-  return storageKey;
-}
-
-function buildArticlePreviewUrl(storageKey: string) {
-  return buildArticleUrl({ [ARTICLE_PREVIEW_QUERY_PARAM]: storageKey });
-}
-
-function buildArticlePrintUrl(storageKey: string) {
-  return buildArticleUrl({
-    [ARTICLE_PREVIEW_QUERY_PARAM]: storageKey,
-    [ARTICLE_PRINT_QUERY_PARAM]: '1',
-  });
 }
 
 export type ShareArticleLinkPlan =
@@ -140,7 +111,7 @@ function stripImagesForShare(entry: CorpusEntry) {
 }
 
 export function createShareArticleLinkPlan(entry: CorpusEntry): ShareArticleLinkPlan {
-  const fullUrl = buildArticleUrl({ [SHARED_ARTICLE_QUERY_PARAM]: encodeSharedArticlePreview(entry) });
+  const fullUrl = buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(entry));
   if (fullUrl.length <= MAX_SHARE_URL_LENGTH) {
     return {
       kind: 'ready',
@@ -151,7 +122,7 @@ export function createShareArticleLinkPlan(entry: CorpusEntry): ShareArticleLink
 
   const strippedShare = stripImagesForShare(entry);
   const fallbackUrl = strippedShare.removedImageCount > 0
-    ? buildArticleUrl({ [SHARED_ARTICLE_QUERY_PARAM]: encodeSharedArticlePreview(strippedShare.entry) })
+    ? buildPreviewUrl(SHARED_ARTICLE_QUERY_PARAM, encodeSharedArticlePreview(strippedShare.entry))
     : null;
 
   logWarning('workspace.article.share_link_too_long', {
@@ -194,10 +165,6 @@ export function isArticlePreviewRequest(locationSearch = window.location.search)
   return searchParams.has(ARTICLE_PREVIEW_QUERY_PARAM) || searchParams.has(SHARED_ARTICLE_QUERY_PARAM);
 }
 
-export function isArticlePrintRequest(locationSearch = window.location.search) {
-  return new URLSearchParams(locationSearch).has(ARTICLE_PRINT_QUERY_PARAM);
-}
-
 export function readStoredArticlePreview(storageKey: string) {
   try {
     pruneExpiredArticlePreviews(localStorage);
@@ -232,7 +199,16 @@ export function resolveArticlePreviewEntry(locationSearch = window.location.sear
 }
 
 export function openArticleInNewTab(entry: CorpusEntry) {
-  const storageKey = persistArticlePreview(entry);
+  pruneExpiredArticlePreviews(localStorage);
+
+  const storageKey = `${ARTICLE_PREVIEW_STORAGE_PREFIX}${entry.id}:${entry.updatedAt}`;
+  localStorage.setItem(
+    storageKey,
+    JSON.stringify({
+      savedAt: new Date().toISOString(),
+      entry,
+    }),
+  );
 
   logAction('workspace.article.open_in_new_tab', {
     entryId: entry.id,
@@ -240,17 +216,5 @@ export function openArticleInNewTab(entry: CorpusEntry) {
     storageKey,
   });
 
-  window.open(buildArticlePreviewUrl(storageKey), '_blank', 'noopener,noreferrer');
-}
-
-export function openArticlePrintPreview(entry: CorpusEntry) {
-  const storageKey = persistArticlePreview(entry);
-
-  logAction('workspace.article.open_print_preview', {
-    entryId: entry.id,
-    title: entry.title,
-    storageKey,
-  });
-
-  return window.open(buildArticlePrintUrl(storageKey), '_blank', 'noopener,noreferrer');
+  window.open(buildPreviewUrl(ARTICLE_PREVIEW_QUERY_PARAM, storageKey), '_blank', 'noopener,noreferrer');
 }
