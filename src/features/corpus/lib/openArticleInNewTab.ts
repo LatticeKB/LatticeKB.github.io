@@ -6,6 +6,7 @@ import type { CorpusEntry } from '../model/types';
 
 const ARTICLE_PREVIEW_QUERY_PARAM = 'articlePreview';
 const SHARED_ARTICLE_QUERY_PARAM = 'sharedArticle';
+const ARTICLE_PRINT_QUERY_PARAM = 'articlePrint';
 const ARTICLE_PREVIEW_STORAGE_PREFIX = 'latticekb:article-preview:';
 const ARTICLE_PREVIEW_TTL_MS = 1000 * 60 * 60 * 24;
 const MAX_SHARE_URL_LENGTH = 2083;
@@ -97,6 +98,13 @@ function buildArticlePreviewUrl(storageKey: string) {
   return buildArticleUrl({ [ARTICLE_PREVIEW_QUERY_PARAM]: storageKey });
 }
 
+function buildArticlePrintUrl(storageKey: string) {
+  return buildArticleUrl({
+    [ARTICLE_PREVIEW_QUERY_PARAM]: storageKey,
+    [ARTICLE_PRINT_QUERY_PARAM]: '1',
+  });
+}
+
 export type ShareArticleLinkPlan =
   | {
       kind: 'ready';
@@ -186,6 +194,9 @@ export function isArticlePreviewRequest(locationSearch = window.location.search)
   return searchParams.has(ARTICLE_PREVIEW_QUERY_PARAM) || searchParams.has(SHARED_ARTICLE_QUERY_PARAM);
 }
 
+export function isArticlePrintRequest(locationSearch = window.location.search) {
+  return new URLSearchParams(locationSearch).has(ARTICLE_PRINT_QUERY_PARAM);
+}
 
 export function readStoredArticlePreview(storageKey: string) {
   try {
@@ -230,4 +241,16 @@ export function openArticleInNewTab(entry: CorpusEntry) {
   });
 
   window.open(buildArticlePreviewUrl(storageKey), '_blank', 'noopener,noreferrer');
+}
+
+export function openArticlePrintPreview(entry: CorpusEntry) {
+  const storageKey = persistArticlePreview(entry);
+
+  logAction('workspace.article.open_print_preview', {
+    entryId: entry.id,
+    title: entry.title,
+    storageKey,
+  });
+
+  return window.open(buildArticlePrintUrl(storageKey), '_blank', 'noopener,noreferrer');
 }
